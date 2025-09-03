@@ -9,6 +9,117 @@ from niryo_ned_ros2_interfaces.srv import ControlConveyor
 from niryo_ned_ros2_interfaces.msg import DigitalIOState
 from niryo_ned_ros2_interfaces.action import RobotMove, Tool
 
+import yaml
+import os
+from ament_index_python.packages import get_package_share_directory
+
+
+class ConveyorController:
+    def __init__(self, node: Node, service_name: str, conveyor_id: int, speed: int) -> None:
+        self._node = node
+        self._client = node.create_client(ControlConveyor, service_name)
+        self._conveyor_id = int(conveyor_id)
+        self._speed = int(speed)
+        self._current_state = None  # True running, False stopped
+
+    def set_running(self, run: bool, done_cb=None) -> None:
+        if self._current_state is not None and self._current_state == run:
+            if done_cb:
+                done_cb()
+            return
+        if not self._client.service_is_ready():
+            if not self._client.wait_for_service(timeout_sec=0.0):
+                self._node.get_logger().warn(f"Waiting for service {self._client.srv_name if hasattr(self._client, 'srv_name') else ''}")
+                return
+        req = ControlConveyor.Request()
+        req.id = self._conveyor_id
+        req.control_on = True
+        req.speed = self._speed
+        req.direction = 1 if run else 0
+        self._node.get_logger().info(f"Conveyor {'RUN' if run else 'STOP'} (direction={req.direction})")
+        fut = self._client.call_async(req)
+
+        def _after(_):
+            self._current_state = run
+            if done_cb:
+                done_cb()
+
+        fut.add_done_callback(_after)
+
+
+class PickAndPlaceExecutor:
+    def __init__(self, node: Node, robot_action: str, tool_action: str, poses: dict, tool_cfg: dict) -> None:
+        self._node = node
+        self._robot = ActionClient(node, RobotMove, robot_action)
+        self._tool = ActionClient(node, Tool, tool_action)
+        self._poses = poses
+        self._tool_cfg = tool_cfg
+        self._steps = None
+
+    def start(self, done_cb=None) -> None:
+        steps = [
+            (self._move, self._poses["grip"]),
+            (self._tool_cmd, 2, True),  # close
+            (self._move, self._poses["high1"]),
+            (self._move, self._poses["high2"]),
+            (self._move, self._poses["low1"]),
+            (self._tool_cmd, 1, True),  # open
+            (self._move, self._poses["high2"]),
+            (self._move, self._poses["high1"]),
+            (self._move, self._poses["grip"]),
+        ]
+        self._steps = iter(steps)
+        self._next(done_cb)
+
+    def _next(self, done_cb):
+        try:
+            fn, *args = next(self._steps)
+        except StopIteration:
+            self._steps = None
+            if done_cb:
+                done_cb()
+            return
+        fn(*args, done_cb=lambda: self._next(done_cb))
+
+    def _move(self, joints, done_cb=None):
+        goal = RobotMove.Goal()
+        goal.cmd.cmd_type = 0
+        goal.cmd.joints = list(joints)
+        send_fut = self._robot.send_goal_async(goal)
+
+        def _sent(f):
+            gh = f.result()
+            if not gh.accepted:
+                self._node.get_logger().error("RobotMove rejected")
+                if done_cb:
+                    done_cb()
+                return
+            res_fut = gh.get_result_async()
+            res_fut.add_done_callback(lambda _:(self._node.get_logger().info("RobotMove completed"), done_cb and done_cb()))
+
+        send_fut.add_done_callback(_sent)
+
+    def _tool_cmd(self, cmd_type: int, activate: bool, done_cb=None):
+        goal = Tool.Goal()
+        goal.cmd.cmd_type = int(cmd_type)
+        goal.cmd.tool_id = int(self._tool_cfg["id"])
+        goal.cmd.activate = bool(activate)
+        goal.cmd.max_torque_percentage = int(self._tool_cfg["max"])
+        goal.cmd.hold_torque_percentage = int(self._tool_cfg["hold"])
+        send_fut = self._tool.send_goal_async(goal)
+
+        def _sent(f):
+            gh = f.result()
+            if not gh.accepted:
+                self._node.get_logger().error("Tool command rejected")
+                if done_cb:
+                    done_cb()
+                return
+            res_fut = gh.get_result_async()
+            res_fut.add_done_callback(lambda _:(self._node.get_logger().info(f"Tool cmd completed (cmd_type={cmd_type})"), done_cb and done_cb()))
+
+        send_fut.add_done_callback(_sent)
+
 
 class QualityCheckNode(Node):
     def __init__(self) -> None:
@@ -26,81 +137,50 @@ class QualityCheckNode(Node):
             "conveyor_service",
             "/quality_check/niryo_robot/conveyor/control_conveyor",
         ).get_parameter_value().string_value
+        self.robot_action = self.declare_parameter(
+            "robot_action",
+            "/quality_check/niryo_robot_arm_commander/robot_action",
+        ).get_parameter_value().string_value
+        self.tool_action = self.declare_parameter(
+            "tool_action",
+            "/quality_check/niryo_robot_tools_commander/action_server",
+        ).get_parameter_value().string_value
+        self.tool_id = self.declare_parameter("tool_id", 11).get_parameter_value().integer_value
+        self.max_torque_percentage = self.declare_parameter("max_torque_percentage", 100).get_parameter_value().integer_value
+        self.hold_torque_percentage = self.declare_parameter("hold_torque_percentage", 100).get_parameter_value().integer_value
 
-        # Set up subscriber to digital IO state
+        # Load poses from YAML (config/poses.yaml by default)
+        default_poses_path = os.path.join(
+            get_package_share_directory("ned3pro_quality_check_manager"),
+            "config",
+            "poses.yaml",
+        )
+        poses_path = self.declare_parameter("poses_path", default_poses_path).get_parameter_value().string_value
+        with open(poses_path, "r") as f:
+            poses_file = yaml.safe_load(f)
+        poses = poses_file.get("poses", {})
+        required = ["grip", "high1", "high2", "low1"]
+        for key in required:
+            if key not in poses:
+                raise RuntimeError(f"Missing pose '{key}' in {poses_path}")
+
+        # Compose helpers
+        self.conveyor = ConveyorController(self, self.conveyor_service, self.conveyor_id, self.speed)
+        tool_cfg = {"id": self.tool_id, "max": self.max_torque_percentage, "hold": self.hold_torque_percentage}
+        self.pick_place = PickAndPlaceExecutor(self, self.robot_action, self.tool_action, poses, tool_cfg)
+
+        # State
+        self._busy = False
+        self._last_object_detected = None
+
+        # Subscriptions and timer
         qos = QoSProfile(
             reliability=ReliabilityPolicy.RELIABLE,
             history=HistoryPolicy.KEEP_LAST,
             depth=10,
         )
-        self._last_object_detected = None  # Unknown at startup
-        self._sub = self.create_subscription(
-            DigitalIOState, self.digital_state_topic, self._on_digital_state, qos
-        )
-
-        # Service client to control the conveyor
-        self._client = self.create_client(ControlConveyor, self.conveyor_service)
-        if not self._client.wait_for_service(timeout_sec=5.0):
-            self.get_logger().warn(
-                f"Service {self.conveyor_service} not available yet. Will keep trying while running."
-            )
-
-        # Action clients for robot and tool
-        self._robot_move_ac = ActionClient(
-            self,
-            RobotMove,
-            "/quality_check/niryo_robot_arm_commander/robot_action",
-        )
-        self._tool_ac = ActionClient(
-            self,
-            Tool,
-            "/quality_check/niryo_robot_tools_commander/action_server",
-        )
-
-        # Tool parameters
-        self.tool_id = self.declare_parameter("tool_id", 11).get_parameter_value().integer_value
-        self.max_torque_percentage = self.declare_parameter("max_torque_percentage", 100).get_parameter_value().integer_value
-        self.hold_torque_percentage = self.declare_parameter("hold_torque_percentage", 100).get_parameter_value().integer_value
-
-        # Predefined poses (as joints)
-        self.grip_pose = [
-            -0.01677261411166551,
-            -0.020751964806212577,
-            -0.8435874406589392,
-            -0.045926770046776255,
-            -0.6519463250437423,
-            -0.02445103901637724,
-        ]
-        self.high_pose_1 = [
-            -0.015428710587629874,
-            -0.005602506898901798,
-            0.07335618846132168,
-            0.0016266343776782932,
-            -1.5968784903812976,
-            -0.016781135076949116,
-        ]
-        self.high_pose_2 = [
-            1.592560582567266,
-            0.030054569719342356,
-            -0.029426251188624398,
-            -0.0075772503496351895,
-            -1.5800047017145555,
-            -0.01831511586483492,
-        ]
-        self.low_pose_1 = [
-            1.4017786420317657,
-            -0.23052308760341106,
-            -0.6880786043062445,
-            -0.05513065477409018,
-            -0.667286132922599,
-            -0.03979084689523393,
-        ]
-
-        # Create a timer to evaluate and command conveyor when state changes
-        self._current_direction = None  # 1 forward, 0 stop (as per user spec)
-        self._busy = False
-        self._steps_iter = None
-        self._timer = self.create_timer(0.1, self._control_loop)
+        self.create_subscription(DigitalIOState, self.digital_state_topic, self._on_digital_state, qos)
+        self.create_timer(0.1, self._control_loop)
 
         self.get_logger().info("quality_check_node started: monitoring sensor and controlling conveyor")
 
@@ -112,146 +192,23 @@ class QualityCheckNode(Node):
                 f"Invalid digital input index {self.sensor_index} or message structure: {exc}"
             )
             return
-
-        # User-provided logic: object_detected = not value
-        object_detected = not value
-        self._last_object_detected = object_detected
+        self._last_object_detected = not value
 
     def _control_loop(self) -> None:
-        # Require a sensor reading first
         if self._last_object_detected is None:
             return
-
-        # No object detected: ensure conveyor runs (unless busy with sequence)
         if not self._last_object_detected:
             if not self._busy:
-                self._set_conveyor_state_async(run=True)
+                self.conveyor.set_running(True)
             return
-
-        # Object detected: stop conveyor and run pick-and-place once
         if self._busy:
             return
         self._busy = True
-        # Stop conveyor first, then start async pick-and-place chain
-        self._set_conveyor_state_async(run=False, done_cb=self._start_pick_and_place)
+        self.conveyor.set_running(False, done_cb=lambda: self.pick_place.start(done_cb=self._after_sequence))
 
-    def _set_conveyor_state_async(self, run: bool, done_cb=None) -> None:
-        # Only command when change is needed
-        if self._current_direction is not None:
-            currently_running = self._current_direction == 1
-            if run == currently_running:
-                if done_cb:
-                    done_cb()
-                return
-        if not self._client.service_is_ready():
-            # Try reconnecting lazily
-            if not self._client.wait_for_service(timeout_sec=0.0):
-                self.get_logger().warn(f"Waiting for service {self.conveyor_service}")
-                return
-        req = ControlConveyor.Request()
-        req.id = int(self.conveyor_id)
-        if run:
-            req.control_on = True
-            req.speed = int(self.speed)
-            req.direction = 1
-            next_state = 1
-            self.get_logger().info("Sending conveyor RUN command (direction=1)")
-        else:
-            req.control_on = True
-            req.speed = int(self.speed)
-            req.direction = 0
-            next_state = 0
-            self.get_logger().info("Sending conveyor STOP command (direction=0)")
-        future = self._client.call_async(req)
-
-        def _after(_):
-            self._current_direction = next_state
-            self.get_logger().info(
-                f"Conveyor command sent: id={req.id} on={req.control_on} speed={req.speed} direction={req.direction}"
-            )
-            if done_cb:
-                done_cb()
-
-        future.add_done_callback(_after)
-
-    def _start_pick_and_place(self) -> None:
-        # Ensure action servers are ready (non-blocking check)
-        if not self._robot_move_ac.wait_for_server(timeout_sec=0.0):
-            self.get_logger().warn("RobotMove action server not ready yet")
-        if not self._tool_ac.wait_for_server(timeout_sec=0.0):
-            self.get_logger().warn("Tool action server not ready yet")
-
-        # Build async sequence as (callable, args...)
-        steps = [
-            (self._send_robot_move_async, self.grip_pose),
-            (self._send_tool_command_async, 2, True),  # close
-            (self._send_robot_move_async, self.high_pose_1),
-            (self._send_robot_move_async, self.high_pose_2),
-            (self._send_robot_move_async, self.low_pose_1),
-            (self._send_tool_command_async, 1, True),   # open
-            (self._send_robot_move_async, self.high_pose_2),
-            (self._send_robot_move_async, self.high_pose_1),
-            (self._send_robot_move_async, self.grip_pose),
-        ]
-        self._steps_iter = iter(steps)
-        self._execute_next_step()
-
-    def _execute_next_step(self) -> None:
-        if self._steps_iter is None:
-            return
-        try:
-            step = next(self._steps_iter)
-        except StopIteration:
-            # Sequence finished
-            self._steps_iter = None
-            self._busy = False
-            self._set_conveyor_state_async(run=True)
-            return
-        func, *args = step
-        func(*args, done_cb=self._execute_next_step)
-
-    def _send_robot_move_async(self, joints, done_cb=None):
-        goal = RobotMove.Goal()
-        goal.cmd.cmd_type = 0
-        goal.cmd.joints = list(joints)
-        send_future = self._robot_move_ac.send_goal_async(goal)
-
-        def _sent(fut):
-            goal_handle = fut.result()
-            if not goal_handle.accepted:
-                self.get_logger().error("RobotMove goal rejected")
-                if done_cb:
-                    done_cb()
-                return
-            result_future = goal_handle.get_result_async()
-            result_future.add_done_callback(lambda _:
-                (self.get_logger().info("RobotMove completed"), done_cb and done_cb())
-            )
-
-        send_future.add_done_callback(_sent)
-
-    def _send_tool_command_async(self, cmd_type: int, activate: bool, done_cb=None):
-        goal = Tool.Goal()
-        goal.cmd.cmd_type = int(cmd_type)
-        goal.cmd.tool_id = int(self.tool_id)
-        goal.cmd.activate = bool(activate)
-        goal.cmd.max_torque_percentage = int(self.max_torque_percentage)
-        goal.cmd.hold_torque_percentage = int(self.hold_torque_percentage)
-        send_future = self._tool_ac.send_goal_async(goal)
-
-        def _sent(fut):
-            goal_handle = fut.result()
-            if not goal_handle.accepted:
-                self.get_logger().error("Tool goal rejected")
-                if done_cb:
-                    done_cb()
-                return
-            result_future = goal_handle.get_result_async()
-            result_future.add_done_callback(lambda _:
-                (self.get_logger().info(f"Tool command completed (cmd_type={cmd_type})"), done_cb and done_cb())
-            )
-
-        send_future.add_done_callback(_sent)
+    def _after_sequence(self):
+        self._busy = False
+        self.conveyor.set_running(True)
 
 
 def main() -> None:
