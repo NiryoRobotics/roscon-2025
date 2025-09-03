@@ -20,6 +20,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
   install(
     PROGRAMS
       scripts/quality_check_node.py
+      scripts/quality_check_node_naive.py
     DESTINATION lib/${PROJECT_NAME}
   )
 endif()
