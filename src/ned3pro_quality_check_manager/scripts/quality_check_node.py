@@ -167,7 +167,7 @@ class PickAndPlaceExecutorAsync:
         _ = future.result()  # we could inspect result if needed
         # Determine if this step was the move to high1 (first high)
         step = self._steps[self._step_idx]
-        is_first_high_move = (step[0] == "move" and step[1] is self._poses["high1"])
+        is_first_high_move = (step[0] == "move" and step[1] == self._poses["high1"])
 
         if is_first_high_move and not self._first_high_emitted:
             self._first_high_emitted = True
