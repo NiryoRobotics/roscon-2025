@@ -4,3 +4,6 @@ log/
 
 *.pyc
 __pycache__/
+
+core
+
