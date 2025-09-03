@@ -25,7 +25,7 @@ def generate_launch_description():
     )
 
     moveit_config = (
-        MoveItConfigsBuilder("niryo_ned3pro")
+        MoveItConfigsBuilder("niryo_ned3pro", package_name="ned3pro_quality_check_manager")
         .robot_description(
             file_path=urdf_file,
         )
