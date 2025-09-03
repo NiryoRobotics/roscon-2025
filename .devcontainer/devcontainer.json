@@ -1,0 +1,17 @@
+{
+    "name": "ROS2 Jazzy Niryo",
+    "image": "ros2-jazzy-roscon-niryo-full",
+    "runArgs": [
+      "--net=host",
+      "-e", "DISPLAY=${localEnv:DISPLAY}",
+      "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
+      "--device", "/dev/dri"
+    ],
+    "extensions": [
+      "ms-python.python",
+      "ms-iot.vscode-ros",
+      "ms-python.vscode-pylance"
+    ],
+    "remoteUser": "root"
+  }
+  
