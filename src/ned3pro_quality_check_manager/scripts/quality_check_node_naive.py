@@ -3,6 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from std_msgs.msg import String
 from rclpy.action import ActionClient
 
 from niryo_ned_ros2_interfaces.srv import ControlConveyor
@@ -50,17 +51,34 @@ class PickAndPlaceExecutorSync:
         self._tool_cfg = tool_cfg
 
         if not self._robot.wait_for_server(timeout_sec=5.0):
-            self._node.get_logger().error(f"Serveur robot {robot_action} not available !")
+            self._node.get_logger().error(f"robot server {robot_action} not available !")
         if not self._tool.wait_for_server(timeout_sec=5.0):
-            self._node.get_logger().error(f"Serveur tool {tool_action} not available !")
+            self._node.get_logger().error(f"tool server {tool_action} not available !")
 
-    def execute(self):
+    def execute_first_phase(self) -> None:
+        """Go pick the object and drop it at low1, open gripper, return to high2."""
         steps = [
             ("move", self._poses["grip"]),
             ("tool", 2, True),  # close
             ("move", self._poses["high1"]),
             ("move", self._poses["high2"]),
             ("move", self._poses["low1"]),
+            ("tool", 1, True),  # open
+            ("move", self._poses["high2"]),
+        ]
+        for step in steps:
+            if step[0] == "move":
+                self._move(step[1])
+            elif step[0] == "tool":
+                self._tool_cmd(step[1], step[2])
+
+    def execute_second_phase(self, target_pose: list[float]) -> None:
+        """From high2, go to low1, close, high2, go to target, open, and return path."""
+        steps = [
+            ("move", self._poses["low1"]),
+            ("tool", 2, True),  # close
+            ("move", self._poses["high2"]),
+            ("move", target_pose),
             ("tool", 1, True),  # open
             ("move", self._poses["high2"]),
             ("move", self._poses["high1"]),
@@ -136,7 +154,7 @@ class QualityCheckNodeSync(Node):
         with open(poses_path, "r") as f:
             poses_file = yaml.safe_load(f)
         poses = poses_file.get("poses", {})
-        for key in ["grip", "high1", "high2", "low1"]:
+        for key in ["grip", "high1", "high2", "low1", "safe", "unsafe"]:
             if key not in poses:
                 raise RuntimeError(f"Missing pose '{key}' in {poses_path}")
 
@@ -147,6 +165,7 @@ class QualityCheckNodeSync(Node):
 
         # --- State ---
         self._last_object_detected = None
+        self._last_safety_state: str | None = None
 
         # --- Subscription ---
         qos = QoSProfile(
@@ -155,6 +174,7 @@ class QualityCheckNodeSync(Node):
             depth=10,
         )
         self.create_subscription(DigitalIOState, self.digital_state_topic, self._on_digital_state, qos)
+        self.create_subscription(String, "/quality_check/safety_state", self._on_safety_state, 10)
 
         self.get_logger().info("quality_check_node_sync started: monitoring sensor and controlling conveyor")
 
@@ -165,6 +185,10 @@ class QualityCheckNodeSync(Node):
             self.get_logger().error(f"Invalid digital input index {self.sensor_index}: {exc}")
             return
         self._last_object_detected = not value
+
+    def _on_safety_state(self, msg: String) -> None:
+        self._last_safety_state = msg.data
+        self.get_logger().debug(f"Updated safety_state: {self._last_safety_state}")
 
     def run_loop(self):
         """Main synchronous loop"""
@@ -179,9 +203,14 @@ class QualityCheckNodeSync(Node):
                 self.conveyor.set_running(True)
                 continue
 
-            # Object detected → stop conveyor and pick & place
+            # Object detected → stop conveyor and execute in two phases
             self.conveyor.set_running(False)
-            self.pick_place.execute()
+            # Phase 1: pick and drop at low1, back to high2
+            self.pick_place.execute_first_phase()
+            # Phase 2: based on last safety state
+            target = self.pick_place._poses["safe"] if (self._last_safety_state or "").lower() == "safe" else self.pick_place._poses["unsafe"]
+            self.get_logger().info(f"Second phase target: {'SAFE' if (self._last_safety_state or '').lower() == 'safe' else 'UNSAFE'}")
+            self.pick_place.execute_second_phase(target)
             self.conveyor.set_running(True)
             self._last_object_detected = False  # Reset to wait for the next object
 
