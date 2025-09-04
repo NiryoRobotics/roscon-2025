@@ -151,7 +151,7 @@ def generate_launch_description():
         speed_arg,
         sensor_index_arg,
         static_tf,
-        move_group_node,
+        #move_group_node,
         rviz_node,
         packaging_moveit2_node,
     ])
