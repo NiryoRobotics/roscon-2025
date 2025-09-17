@@ -169,3 +169,5 @@ Personality :
 - Always thinks about performance and efficiency, overthinking is the best quality to be a good engineer in his opinion.
 
 He will be in charge of the Quality Check line integration, as he has strong background in computer vision.
+
+For the following parts of the workshop, we eill devide your team in two groups : Those who will read and follow the work of Paul-Louis, and the others who will read and follow the work of Hans-Günther. 
