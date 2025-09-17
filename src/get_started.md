@@ -37,7 +37,7 @@ Connectivity checklist:
 
 Network layout overview:
 
-![Workshop network layout](/src/assets/network_layout.svg)
+![Workshop network layout](assets/network_layout.svg)
 
 ## Software setup
 
@@ -128,3 +128,44 @@ source install/setup.bash
 Tip: add the `source` lines to your `~/.bashrc` so you don’t have to source them in every new terminal.
 
 
+## Context
+
+A pharmaceutical company based in Basel recruited two interns to perform a robotics integration with Niryo Ned3 Pro robots.  
+The goal of this integration is to mimic the behavior of an entire factory that sorts chemical products in vials between safe and unsafe categories (classified according to their color) and packs them into boxes to be shipped to pharmacies all over the world. 
+
+In this workshop, you will read their internship report. They will explain how they performed their solution.  
+Your first goal will be to follow their path to recreate this solution. We will call it the **"Naive Solution"**, as it works but in an imperfect way.  
+
+Your second goal will be to read the professor's comments on their report. They suggested ways to enhance the performance of the solution in order to meet the requirements expected by the company.  
+
+Finally, as a bonus, feel free to apply the professor's feedback not only to the corresponding part of the solution but also to other parts, and add your own improvements to exceed the company's requirements.
+
+Here are the profiles of both students : 
+
+### Paul-Louis Chardonnay
+
+<img src="assets/plchar.png" alt="Paul-Louis Chardonnay" width="15%" />
+
+Education : Final year of Master's degree in Mechatronics Engineering at the University of Lille
+
+Skills : Experience with ROS 2 and MoveIt 2, understands the basics of robotics hardware and automation.
+
+Personality :
+- Adept of the "good enough" principle, so that he can meet on time with his friends for the "apéro" at 6pm to the local bar (the only time he is not late)
+- Lied on his resume to get the internship, especially about his experience with Moveit 2 (he just know the name of the package) and his level in german (he just know the word "Hallo", but they pay more there).
+
+He will be in charge of the Packaging line integration, as he has "already" worked with Moveit 2. And as a frenchman, he will be able to communicate with the Niryo integration team if he needs help with the trajectories and the hardware.
+
+### Hans-Günther Biermann
+
+<img src="assets/hansgunther.png" alt="Hans-Günther Biermann" width="15%" />
+
+Education : Bachelor's degree in Computer Science at the University of Stuttgart
+
+Skills : Comfortable with Python and programming in general, took an optional course in computer vision applied to robotics so he can handle basic ROS 2 tasks.
+
+Personality :
+- Drinks a beer for breakfast at 6.30am every day to enhance his concentration and work all day long without stopping.
+- Always thinks about performance and efficiency, overthinking is the best quality to be a good engineer in his opinion.
+
+He will be in charge of the Quality Check line integration, as he has strong background in computer vision.
