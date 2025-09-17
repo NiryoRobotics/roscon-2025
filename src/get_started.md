@@ -39,3 +39,92 @@ Network layout overview:
 
 ![Workshop network layout](/src/assets/network_layout.svg)
 
+## Software setup
+
+There are two ways to run the workshop environment: locally (if you already have ROS 2 Jazzy on your machine) or using our Docker image (recommended for consistency).
+
+### Locally
+
+In a new workspace, clone the ROS 2 driver on your machine:
+
+```bash
+mkdir -p ~/ros2_drivers_ws/src
+cd ~/ros2_drivers_ws/src
+git clone https://github.com/NiryoRobotics/ned-ros2-driver.git
+```
+
+Install ROS 2 dependencies with rosdep:
+
+```bash
+cd ~/ros2_drivers_ws
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+Create a Python virtual environment and install Python dependencies:
+
+```bash
+cd ~/ros2_drivers_ws
+python3 -m venv mysupervenvname --system-site-packages
+source mysupervenvname/bin/activate
+pip install -r src/ned-ros2-driver/requirements.txt
+```
+
+Create another workspace for the ROSCON workshop:
+
+```bash
+mkdir -p ~/roscon_ws
+cd ~/roscon_ws
+git clone https://github.com/NiryoRobotics/roscon-2025.git
+```
+
+### With Docker (recommended)
+
+Run the provided image with Docker, or build a new one using the included Dockerfile.
+
+- Ensure Docker has access to your host network (for ROS 2 discovery across devices).
+- Ensure GUI access if you plan to run graphical tools (e.g., export X11 or use Wayland/XQuartz depending on your OS).
+- If needed, ask GPT for a tailored `docker run` command for your operating system.
+
+Example considerations (not a one-size-fits-all command):
+- `--network host` (Linux) or proper port/bridge config on other OSes
+- X11 forwarding: `-e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`
+- Mount your workspaces: `-v ~/ros2_drivers_ws:/root/ros2_drivers_ws -v ~/roscon_ws:/root/roscon_ws`
+
+### Raspberry Pi
+
+The Raspberry Pi runs Ubuntu 24 with everything pre-installed. The password is `robotics`. You do not need to perform the software setup steps on the Raspberry Pi.
+
+### Common steps (Local and Docker)
+
+Set up the ROS 2 driver configuration:
+
+```bash
+nano ~/ros2_drivers_ws/src/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
+```
+
+- Do not add a namespace.
+- Add your robot IP here (QC robot for Computer 1, or Packaging robot for Computer 2).
+- Find your robot IP by connecting via SSH:
+
+```bash
+ssh niryo@ned3pro-[robot_ssid].local
+ip a
+```
+
+Copy the IP of the Ethernet interface, then save `drivers_list.yaml`.
+
+Build both workspaces and source their setups:
+
+```bash
+cd ~/ros2_drivers_ws
+colcon build
+source install/setup.bash
+
+cd ~/roscon_ws
+colcon build
+source install/setup.bash
+```
+
+Tip: add the `source` lines to your `~/.bashrc` so you don’t have to source them in every new terminal.
+
+
