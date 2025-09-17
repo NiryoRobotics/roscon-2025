@@ -45,11 +45,6 @@ def generate_launch_description():
         output="screen",
         parameters=[moveit_config.to_dict()],
         arguments=["--ros-args", "--log-level", "info"],
-        remappings=[
-            ("/joint_states", "/quality_check/joint_states"), 
-            ("/tf", "/quality_check/tf"),  
-            ("/tf_static", "/quality_check/tf_static"),
-        ],
         
     )
 
@@ -69,11 +64,6 @@ def generate_launch_description():
             moveit_config.planning_pipelines,
             moveit_config.robot_description_kinematics,
             moveit_config.joint_limits,
-        ],
-        remappings=[
-            ("/joint_states", "/quality_check/joint_states"),
-            ("/tf", "/quality_check/tf"),
-            ("/tf_static", "/quality_check/tf_static"),
         ],
     )
 

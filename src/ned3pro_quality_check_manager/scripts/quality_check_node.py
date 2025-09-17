@@ -131,16 +131,16 @@ class QualityCheckNodeSync(Node):
         self.speed = self.declare_parameter("speed", 60).get_parameter_value().integer_value
         self.sensor_index = self.declare_parameter("sensor_index", 4).get_parameter_value().integer_value
         self.digital_state_topic = self.declare_parameter(
-            "digital_state_topic", "/quality_check/niryo_robot_rpi/digital_io_state"
+            "digital_state_topic", "/niryo_robot_rpi/digital_io_state"
         ).get_parameter_value().string_value
         self.conveyor_service = self.declare_parameter(
-            "conveyor_service", "/quality_check/niryo_robot/conveyor/control_conveyor"
+            "conveyor_service", "/niryo_robot/conveyor/control_conveyor"
         ).get_parameter_value().string_value
         self.robot_action = self.declare_parameter(
-            "robot_action", "/quality_check/niryo_robot_arm_commander/robot_action"
+            "robot_action", "/niryo_robot_arm_commander/robot_action"
         ).get_parameter_value().string_value
         self.tool_action = self.declare_parameter(
-            "tool_action", "/quality_check/niryo_robot_tools_commander/action_server"
+            "tool_action", "/niryo_robot_tools_commander/action_server"
         ).get_parameter_value().string_value
         self.tool_id = self.declare_parameter("tool_id", 11).get_parameter_value().integer_value
         self.max_torque_percentage = self.declare_parameter("max_torque_percentage", 100).get_parameter_value().integer_value
