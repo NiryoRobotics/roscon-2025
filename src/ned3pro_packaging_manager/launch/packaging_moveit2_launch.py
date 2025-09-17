@@ -79,11 +79,6 @@ def generate_launch_description():
         output="screen",
         parameters=[moveit2_config.to_dict()],
         arguments=["--ros-args", "--log-level", "info"],
-        remappings=[
-            ("/joint_states", "/packaging/joint_states"), 
-            ("/tf", "/packaging/tf"),  
-            ("/tf_static", "/packaging/tf_static"),
-        ],
         
     )
 
@@ -99,14 +94,9 @@ def generate_launch_description():
                 "conveyor_id": LaunchConfiguration("conveyor_id"),
                 "speed": LaunchConfiguration("speed"),
                 "sensor_index": LaunchConfiguration("sensor_index"),
-                "digital_state_topic": "/packaging/niryo_robot_rpi/digital_io_state",
-                "conveyor_service": "/packaging/niryo_robot/conveyor/control_conveyor",
+                "digital_state_topic": "/niryo_robot_rpi/digital_io_state",
+                "conveyor_service": "/niryo_robot/conveyor/control_conveyor",
             }
-        ],
-        remappings=[
-            ("/joint_states", "/packaging/joint_states"),
-            ("/tf", "/packaging/tf"),
-            ("/tf_static", "/packaging/tf_static"),
         ],
     )
 
@@ -129,11 +119,6 @@ def generate_launch_description():
             moveit_config.robot_description,
             moveit_config.robot_description_semantic,
         ],
-        remappings=[
-            ("/joint_states", "/packaging/joint_states"),
-            ("/tf", "/packaging/tf"),
-            ("/tf_static", "/packaging/tf_static"),
-        ],
     )
 
     # Static transform publisher (world to base_link for NED3 Pro)
@@ -146,12 +131,12 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        rviz_config_arg,
+        #rviz_config_arg,
         conveyor_id_arg,
         speed_arg,
         sensor_index_arg,
         static_tf,
         #move_group_node,
-        rviz_node,
+        #rviz_node,
         packaging_moveit2_node,
     ])

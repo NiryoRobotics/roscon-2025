@@ -4,9 +4,9 @@ moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControll
 
 moveit_simple_controller_manager:
   controller_names:
-    - /packaging/niryo_robot_follow_joint_trajectory_controller
+    - /niryo_robot_follow_joint_trajectory_controller
 
-  /packaging/niryo_robot_follow_joint_trajectory_controller:
+  /niryo_robot_follow_joint_trajectory_controller:
     type: FollowJointTrajectory
     joints:
       - joint_1
