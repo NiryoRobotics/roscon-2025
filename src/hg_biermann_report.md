@@ -25,7 +25,7 @@ flowchart TD;
 ```
 **For the following steps, please refer to the code in the `src/workshop/workshop_quality_check_manager/scripts/quality_check_node.py` file.**
 
-Starting with the main Class, the Quality Check Node. 
+Starting with the main Class, the `Quality Check Node`. 
 
 It starts with the initialization of the parameters : 
 
@@ -55,11 +55,11 @@ The niryo conveyor belt has an ID of 9 by default. The id is nevertheless set as
 
 The speed parameter describes the percentage of the conveyor belt max speed. I decided to set it by 60% by default because after some tests, I found that higher speeds were not stable enough for the robot to pick and place the vials.
 
-The sensor_index parameter is used to get the index of the digital input that is used to detect the presence of a vial. I decided to set it to 4 by default because the IR sensor is the fourth digital input of the robot by default. Neverthless, it is set as a parameter to be able to use another sensor if needed in a future implementation.
+The `sensor_index` parameter is used to get the index of the digital input that is used to detect the presence of a vial. I decided to set it to 4 by default because the IR sensor is the fourth digital input of the robot by default. Neverthless, it is set as a parameter to be able to use another sensor if needed in a future implementation.
 
 The topic, services and actions names are also set as parameters in order to be able to change it if the niryo's API changes in the future. The default values are the ones used in the Niryo Ned3 Pro robot as today. 
 
-The tool_id is set as a parameter as it is different for every Gripper and Tool of the Niryo Brand. For this application we modified a **Custom Gripper** to be able to pick the vials. The default value is thus the one of the Custom Gripper (11).
+The `tool_id` is set as a parameter as it is different for every Gripper and Tool of the Niryo Brand. For this application we modified a **Custom Gripper** to be able to pick the vials. The default value is thus the one of the Custom Gripper (11).
 
 Finally, the max_torque_percentage and hold_torque_percentage parameters are by default set to 100% because maximum force is needed for the vials to be grabbed. They are set as parameters to be able to re-use the code for other applications in the factory.
 
@@ -78,7 +78,7 @@ poses = poses_file.get("poses", {})
 
 The poses are loaded from the `poses.yaml` file. The file is located in the `config` folder of the `workshop_quality_check_manager` package. The file contains the poses for the robot to move to. They are configured into a .yaml file to be able to easily modify them if needed, as each robot can slightly differ from the other.
 
-As described in the schema, the node creates a Conveyor Controller and a Pick and Place Executor. It distributes the corresponding parameters to the two classes.
+As described in the schema, the node creates a `Conveyor Controller` and a `Pick and Place Executor`. It distributes the corresponding parameters to the two classes.
 
 ```python
 # --- Helpers ---
@@ -106,11 +106,143 @@ We also introduce a QoS Profile to ensure that the messages from the IR sensor a
 
 **For now, you will note that the methods of your classes are empty. From the instructions given by Hans-Günther, complete the missing methods to be able to reproduce the naive solution.**
 
-Both subscriptions lead to the executions of the respectives methods _on_digital_state and _on_safety_state.
+Both subscriptions lead to the executions of the respectives methods `_on_digital_state` and `_on_safety_state`.
+
+The IR sensor returns a boolean value, stored in the 5th index of the digital inputs table. This table is a list of boolean values, each representing the state of a digital input and published each time there is a change of at least one digital input.
+
+The table is published on the `digital_state_topic` and the message is a `DigitalIOState` message type.
+
+The value is 1 when no object is detected, and 0 when an object is detected. Meaning we should invert it before placing it in the variable `_last_object_detected`.
+
+The safety state is a string value. It is published on the `safety_state` topic and the message data can be directly stored in the variable `_last_safety_state`.
+
+For these two methods, we consider implementing a simple error handling to avoid any crash of the node, especially for the `digital_state` topic, as the index can be an invalid parameter (i.e not in the list).
+
+
+The `ConveyorController` class is responsible for controlling the conveyor belt. It is initialized with the parameters passed to the node and creates a service client to control the conveyor belt : 
+
+```python
+    def __init__(self, node: Node, service_name: str, conveyor_id: int, speed: int) -> None:
+        self._node = node
+        self._client = node.create_client(ControlConveyor, service_name)
+        self._conveyor_id = conveyor_id
+        self._speed = speed
+        self._current_state = None
+
+        if not self._client.wait_for_service(timeout_sec=5.0):
+            self._node.get_logger().error(f"Service {service_name} not available !")
+
+```
+
+The only method to implement in this class is the `set_running` method, that is used to control the speed of the conveyor belt. 
+
+To set the speed of the conveyor belt, we create a request to the service client and set the speed to the desired value along with the direction of the conveyor belt.
+
+Here is the request type to control the conveyor belt :
+```python
+uint8 id
+bool control_on
+int16 speed
+int8 direction
+```
+`control_on` should be set to True to activate the conveyor belt. 
+`direction` is set to 1 for the conveyor belt running in the direction of the robot, 0 to be stopped and -1 to be running in the opposite direction.
+
+This method should also update the `current_state` variable to the new state of the conveyor belt.
+
+To send the request we use the `call_async` method of the service client.
+```python
+future = self._client.call_async(req)
+rclpy.spin_until_future_complete(self._node, future)
+```
+The `PickAndPlaceExecutor` class is responsible for controlling the robot's task. It is initialized with the parameters passed to the node and creates two action clients to control the robot's and tool's movements.
+
+```python
+    def __init__(self, node: Node, robot_action: str, tool_action: str, poses: dict, tool_cfg: dict) -> None:
+        self._node = node
+        self._robot = ActionClient(node, RobotMove, robot_action)
+        self._tool = ActionClient(node, Tool, tool_action)
+        self._poses = poses
+        self._tool_cfg = tool_cfg
+```
+
+In this class, I implemented 2 methods, each responsible for the control of the robot's and tool's movements. They are called `_move` and `_tool_cmd` and send a goal to the respectives action servers.
+
+Here is the goal type to control the robot's movements :
+
+```python
+int32 JOINTS = 0            # uses joints 
+int32 POSE = 1              # uses position and rpy 
+int32 POSITION = 2          # uses position
+int32 RPY = 3               # uses rpy
+int32 POSE_QUAT = 4         # uses position and orientation
+int32 LINEAR_POSE = 5       # uses position and rpy
+int32 SHIFT_POSE = 6        # uses shift
+int32 SHIFT_LINEAR_POSE = 7 # uses shift
+int32 EXECUTE_TRAJ = 8      # uses dist_smoothing, list_poses
+int32 DRAW_SPIRAL = 9
+int32 DRAW_CIRCLE = 10
+int32 EXECUTE_FULL_TRAJ = 11
+int32 EXECUTE_RAW_TRAJ = 12
+
+int32 cmd_type
+
+int32 LEGACY = 1
+int32 DH_CONVENTION = 2
+int32 tcp_version
+
+float64[] joints
+geometry_msgs/Point position
+niryo_robot_msgs/RPY rpy
+geometry_msgs/Quaternion orientation
+niryo_robot_arm_commander/ShiftPose shift
+
+geometry_msgs/Pose[] list_poses
+float32 dist_smoothing
+
+trajectory_msgs/JointTrajectory trajectory
+
+float64[] args
+
+```
+We here only want to move the robot using joint positions, the cmd_type is set to 0. 
+
+For the tool, we use the Tool action server to control the tool's movements : 
+
+```python
+# Gripper
+int8 OPEN_GRIPPER = 1
+int8 CLOSE_GRIPPER = 2
+
+
+uint8 cmd_type
+
+
+int8 tool_id
 
 
 
+uint8 max_torque_percentage
+uint8 hold_torque_percentage
 
+
+
+```
+To set a goal to an action we use the `send_goal_async` method of the action client.
+
+```python
+        send_future = self._tool.send_goal_async(goal)
+        rclpy.spin_until_future_complete(self._node, send_future)
+        goal_handle = send_future.result()
+        if not goal_handle.accepted:
+            self._node.get_logger().error("command rejected")
+            return
+        result_future = goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self._node, result_future)
+
+```
+
+With this base, we have everything to perform our application. I will now describe the path I followed to implement my solution. 
 
 
 ### Raspberry side
