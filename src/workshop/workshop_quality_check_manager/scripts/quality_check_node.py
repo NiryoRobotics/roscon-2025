@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from std_msgs.msg import String
+from rclpy.action import ActionClient
+
+from niryo_ned_ros2_interfaces.srv import ControlConveyor
+from niryo_ned_ros2_interfaces.msg import DigitalIOState
+from niryo_ned_ros2_interfaces.action import RobotMove, Tool
+
+import yaml
+import os
+from ament_index_python.packages import get_package_share_directory
+
+class QualityCheckNodeSync(Node):
+    def __init__(self):
+        super().__init__("quality_check_node_sync")
+
+        # --- Parameters ---
+        self.conveyor_id = self.declare_parameter("conveyor_id", 9).get_parameter_value().integer_value
+        self.speed = self.declare_parameter("speed", 60).get_parameter_value().integer_value
+        self.sensor_index = self.declare_parameter("sensor_index", 4).get_parameter_value().integer_value
+        self.digital_state_topic = self.declare_parameter(
+            "digital_state_topic", "/niryo_robot_rpi/digital_io_state"
+        ).get_parameter_value().string_value
+        self.conveyor_service = self.declare_parameter(
+            "conveyor_service", "/niryo_robot/conveyor/control_conveyor"
+        ).get_parameter_value().string_value
+        self.robot_action = self.declare_parameter(
+            "robot_action", "/niryo_robot_arm_commander/robot_action"
+        ).get_parameter_value().string_value
+        self.tool_action = self.declare_parameter(
+            "tool_action", "/niryo_robot_tools_commander/action_server"
+        ).get_parameter_value().string_value
+        self.tool_id = self.declare_parameter("tool_id", 11).get_parameter_value().integer_value
+        self.max_torque_percentage = self.declare_parameter("max_torque_percentage", 100).get_parameter_value().integer_value
+        self.hold_torque_percentage = self.declare_parameter("hold_torque_percentage", 100).get_parameter_value().integer_value
+
+        # --- Poses ---
+        default_poses_path = os.path.join(
+            get_package_share_directory("ned3pro_quality_check_manager"), "config", "poses.yaml"
+        )
+        poses_path = self.declare_parameter("poses_path", default_poses_path).get_parameter_value().string_value
+        with open(poses_path, "r") as f:
+            poses_file = yaml.safe_load(f)
+        poses = poses_file.get("poses", {})
+
+        # --- Helpers ---
+        self.conveyor = ConveyorController(self, self.conveyor_service, self.conveyor_id, self.speed)
+        tool_cfg = {"id": self.tool_id, "max": self.max_torque_percentage, "hold": self.hold_torque_percentage}
+        self.pick_place = PickAndPlaceExecutor(self, self.robot_action, self.tool_action, poses, tool_cfg)
+
+        # --- State ---
+        self._last_object_detected = None
+        self._last_safety_state: str | None = None
+
+        # --- Subscription ---
+        qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10,
+        )
+        self.create_subscription(DigitalIOState, self.digital_state_topic, self._on_digital_state, qos)
+        self.create_subscription(String, "/safety_state", self._on_safety_state, 10)
+
+        self.get_logger().info("quality_check_node_sync started")
+
+    def _on_digital_state(self, msg: DigitalIOState) -> None:
+        pass
+
+    def _on_safety_state(self, msg: String) -> None:
+        pass
+
+    def run_loop(self):
+        while rclpy.ok():
+            rclpy.spin_once(self, timeout_sec=0.1)
+            pass
+
+
+class PickAndPlaceExecutor:
+
+    def __init__(self, node: Node, robot_action: str, tool_action: str, poses: dict, tool_cfg: dict) -> None:
+        self._node = node
+        self._robot = ActionClient(node, RobotMove, robot_action)
+        self._tool = ActionClient(node, Tool, tool_action)
+        self._poses = poses
+        self._tool_cfg = tool_cfg
+
+        if not self._robot.wait_for_server(timeout_sec=5.0):
+            self._node.get_logger().error(f"robot server {robot_action} not available !")
+        if not self._tool.wait_for_server(timeout_sec=5.0):
+            self._node.get_logger().error(f"tool server {tool_action} not available !")
+
+
+    def _move(self, joints):
+        pass
+
+    def _tool_cmd(self, cmd_type: int, activate: bool):
+        pass
+
+
+class ConveyorController:
+
+    def __init__(self, node: Node, service_name: str, conveyor_id: int, speed: int) -> None:
+        self._node = node
+        self._client = node.create_client(ControlConveyor, service_name)
+        self._conveyor_id = conveyor_id
+        self._speed = speed
+        self._current_state = None
+
+        if not self._client.wait_for_service(timeout_sec=5.0):
+            self._node.get_logger().error(f"Service {service_name} not available !")
+
+    def set_running(self, run: bool) -> None:
+        pass
+
+
+
+def main():
+    rclpy.init()
+    node = QualityCheckNode()
+    try:
+        node.run_loop()
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
+
