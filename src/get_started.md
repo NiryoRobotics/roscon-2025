@@ -170,4 +170,8 @@ Personality :
 
 He will be in charge of the Quality Check line integration, as he has strong background in computer vision.
 
-For the following parts of the workshop, we eill devide your team in two groups : Those who will read and follow the work of Paul-Louis, and the others who will read and follow the work of Hans-Günther. 
+For the following parts of the workshop, we will devide your team in two groups : Those who will read and follow the work of Paul-Louis, and the others who will read and follow the work of Hans-Günther. 
+
+To start the reproducing the Naive solution, please start from the packages located inside the `src/workshop` folder.
+
+Each markdown file contains the instructions to reproduce the Naive solution on Hans-Günther's or Paul-Louis's line.
