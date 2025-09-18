@@ -14,9 +14,9 @@ import yaml
 import os
 from ament_index_python.packages import get_package_share_directory
 
-class QualityCheckNodeSync(Node):
+class QualityCheckNode(Node):
     def __init__(self):
-        super().__init__("quality_check_node_sync")
+        super().__init__("quality_check_node")
 
         # --- Parameters ---
         self.conveyor_id = self.declare_parameter("conveyor_id", 9).get_parameter_value().integer_value
