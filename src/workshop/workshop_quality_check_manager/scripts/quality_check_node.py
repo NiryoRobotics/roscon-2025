@@ -40,7 +40,7 @@ class QualityCheckNode(Node):
 
         # --- Poses ---
         default_poses_path = os.path.join(
-            get_package_share_directory("ned3pro_quality_check_manager"), "config", "poses.yaml"
+            get_package_share_directory("workshop_quality_check_manager"), "config", "poses.yaml"
         )
         poses_path = self.declare_parameter("poses_path", default_poses_path).get_parameter_value().string_value
         with open(poses_path, "r") as f:
