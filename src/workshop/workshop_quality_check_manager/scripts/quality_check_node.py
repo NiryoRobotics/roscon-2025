@@ -68,14 +68,17 @@ class QualityCheckNode(Node):
         self.get_logger().info("quality_check_node_sync started")
 
     def _on_digital_state(self, msg: DigitalIOState) -> None:
+        # TODO: Implement the digital state method
         pass
 
     def _on_safety_state(self, msg: String) -> None:
+        # TODO: Implement the safety state method
         pass
 
     def run_loop(self):
         while rclpy.ok():
             rclpy.spin_once(self, timeout_sec=0.1)
+            # TODO: Implement the run loop
             pass
 
 
@@ -95,9 +98,11 @@ class PickAndPlaceExecutor:
 
 
     def _move(self, joints):
+        # TODO: Implement the move method
         pass
 
     def _tool_cmd(self, cmd_type: int, activate: bool):
+        # TODO: Implement the tool command method
         pass
 
 
@@ -114,6 +119,7 @@ class ConveyorController:
             self._node.get_logger().error(f"Service {service_name} not available !")
 
     def set_running(self, run: bool) -> None:
+        # TODO: Implement the set running method
         pass
 
 

@@ -244,6 +244,42 @@ To set a goal to an action we use the `send_goal_async` method of the action cli
 
 With this base, we have everything to perform our application. I will now describe the path I followed to implement my solution. 
 
+In my head, I like to have everything clear, separated and easy to understand. I thus, divided the work into bricks that make a chain of actions. Here is the diagram that explain the path of resolution for the application. 
+
+```mermaid
+flowchart TD
+    Z[Conveyor run] --> A
+    A[Object Detected ?] -->|no| Z
+    A -->|yes| B[Stop Conveyor]
+    B --> C[Pick the vial and place it to test zone, then leave the camera field of view]
+    C -->|vial safe| D[Pick the vial from the test zone to the packaging conveyor]
+    C -->|vial unsafe| E[Drop the vial to the bin]
+    D --> F[Return Safely to pick zone]
+    E --> F 
+    F --> Z
+
+```
+The `run_loop` method is the one called by the main function, every time it is called we make the node spin once, in order to execute all the actions previously stated. 
+
+We begin by verifying if an object has been detected by the IR sensor, in this case we sant to ensure that the conveyor is running. We then ant to return to the begining of the loop to wait for the next object, this can be perform in python by using a `continue` statement.
+
+If an object is detected, we call our `set_running` method from the conveyor controller to stop the conveyor belt. 
+
+Now here comes the fun part. We need to perform the pick and place operation. As previously stated, I decided to split the operation into two phases. The first pick and place the vial to the test zone, then leave the camera field of view. And the second phase is to pick the vial from the test zone to the packaging conveyor, or to the bin if it's unsafe and then return safely to the pick zone.
+
+I am a very precautionnary person, so I used all my mind to engineer the safest path for the robot to perform this operation. A good thing to know with Niryo robots is that you can use the `freemotion` button, located on the robot's forearm, to move the robot's hand freely. This is very useful to take positions in real life and reproduce them in the code. I stored all these position as joint states in the `poses.yaml` file. To record the positions I listened to the `joint_states` topic..
+
+For the first phase, I took 4 positions to perform the pick and place. The first one is the `grip` position where the robot hand is opened and ready to recieve a vial. Then I want the robot to close the gripper and slowly move in a vertical line to raise the vial to an upper position called `high1`. Then, the robot turns to its left to the `high2` position making a circle trajectory until the vial is just above the test zone. And then we perform a vertical straight line to the `low1` position where the robot opens the gripper and slowly moves back to the `high2` position to safely leave the camera field of view.
+
+When the safety response is recieved, we go back to the `low1` position, grab the vial and move to the `safe` or `unsafe` position depending on the safety state passing by the `high2` position to ensure maximum safety. 
+
+When the second pick and place is performed, we return to the `grip` position to wait for the next object, obvioulsy passing back by the `high2` and `high1` positions to ensure maximum safety, as we want the robot to arrive in a straight line to the conveyor belt before setting it back to run and reseting the `last_object_detected` variable because **safety first**, we never know !
+
+**For now, follow the instructions given by Hans-Günther to complete the missing run loop. Fill the poses.yaml file with the positions you took. You can create some methods on the pick and place executor to perform the two phases and make the code more readable.**
+
+**The correction for the Naive solution is in the `src/ned3pro_quality_check_manager/scripts/quality_check_node_naive.py` file.**
+
+
 
 ### Raspberry side
 
