@@ -283,8 +283,39 @@ When the second pick and place is performed, we return to the `grip` position to
 
 ### Raspberry side
 
+### Nota Bene
+To make the conveyor runs, you need to initialize it by calling a niryo service. You just have to call it once, not each time you run the program. 
+
+```bash
+ros2 service call /niryo_robot/conveyor/ping_and_set_conveyor niryo_ned_ros2_interfaces/srv/SetConveyor "{cmd: 1, id: 9}"
+```
 
 ## Professor's Feedback
+
+Satisfactory overall job (3.5) !
+
+Even if the code is not perfect and the requests of the client are not fully fullfiled, the code is working and the robot is performing the task safely concerning the trajectory part, even if quite slowly.
+
+Nevertheless, the quality check logic is incorrect, containing errors that can lead to unsafe vials being placed in the packaging line.
+
+Here are some feedbacks to improve the code : 
+
+### Quality Check Logic
+
+The main problem of your implementation concerns the logic of the quality check. Firstly because the parameters you applied to the camera are not correct and leads the model to have a bad interpretation of the safety state. Indeed the image you checked on the screen was not the one the modifications were applied to. Please review this image and apply the correct parameters to the camera refering to the images the AI model was trained with. Optimizing the image to speed up the inference time a good idea thought.
+
+Secondly, you decided to publish the safety state on a topic every 5 seconds. Because that's the median time to perform a trajectory in your operation. This is not a good idea because what if the image is not taken at the right time ? Imagine a case where the image is taken without a vial, the last safety state would be randomly chosen.
+
+To solve that we recommand to use a service to get the safety state. This service should be called each time the robot is in the test zone and the safety state should be returned.
+
+### Code Quality
+
+The client requests are not fully fullfiled in term of performances. We, professors judge that the whole architecture of the project is not optimized. The conveyor belt belonging to the robot leads to the impossibility for it to run while the robot is performing the operation. 
+
+A way to solve the problem would be to use a Multi-threaded executor to run the conveyor belt and the robot in parallel. This will implies to change the architecture of the project to a more complex one, with a main node and a conveyor node. 
+
+
+
 
 ## Bonus
 
