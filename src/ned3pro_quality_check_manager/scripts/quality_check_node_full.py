@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
@@ -98,6 +99,8 @@ class PickAndPlaceExecutorSync:
         if not self._tool.wait_for_server(timeout_sec=5.0):
             self._node.get_logger().error(f"tool server {tool_action} not available !")
 
+        self._is_blocked = False
+
     def execute_first_phase(self) -> None:
         """Go pick the object and drop it at low1, open gripper, return to high2."""
         steps = [
@@ -110,10 +113,14 @@ class PickAndPlaceExecutorSync:
             ("move", self._poses["high2"]),
         ]
         for step in steps:
+            while self._is_blocked:
+                time.sleep(0.5)
+                self._node.get_logger().info("Waiting for move to complete")
             if step[0] == "move":
                 self._move(step[1])
             elif step[0] == "tool":
                 self._tool_cmd(step[1], step[2])
+
 
     def execute_second_phase(self, target_pose: list[float]) -> None:
         """From high2, go to low1, close, high2, go to target, open, and return path."""
@@ -128,26 +135,47 @@ class PickAndPlaceExecutorSync:
             ("move", self._poses["grip"]),
         ]
         for step in steps:
+            self._node.get_logger().info(f"Executing step {step[0]}")
+            while self._is_blocked:
+                self._node.get_logger().info(f"Waiting for move to complete {step[0]}")
+                self._node.get_logger().info(f"Is blocked: {self._is_blocked}")
+                time.sleep(0.5)
             if step[0] == "move":
                 self._move(step[1])
             elif step[0] == "tool":
                 self._tool_cmd(step[1], step[2])
 
+
     def _move(self, joints):
+        self._is_blocked = True
         goal = RobotMove.Goal()
         goal.cmd.cmd_type = 0
         goal.cmd.joints = list(joints)
         send_future = self._robot.send_goal_async(goal)
-        rclpy.spin_until_future_complete(self._node, send_future)
-        goal_handle = send_future.result()
+        send_future.add_done_callback(lambda fut: self._on_goal_response(fut, joints))
+
+        #rclpy.spin_until_future_complete(self._node, send_future)
+
+        #rclpy.spin_until_future_complete(self._node, result_future)
+        #self._node.get_logger().info("RobotMove completed")
+
+    def _on_goal_response(self, future, joints):
+        self._node.get_logger().info("RobotMove goal response received")
+        goal_handle = future.result()
         if not goal_handle.accepted:
             self._node.get_logger().error("RobotMove rejected")
             return
         result_future = goal_handle.get_result_async()
-        rclpy.spin_until_future_complete(self._node, result_future)
+        self._node.get_logger().info("RobotMove result future created")
+        result_future.add_done_callback(lambda fut: self._on_result_response(fut))
+
+    def _on_result_response(self, future):
         self._node.get_logger().info("RobotMove completed")
+        self._is_blocked = False
+
 
     def _tool_cmd(self, cmd_type: int, activate: bool):
+        self._is_blocked = True
         goal = Tool.Goal()
         goal.cmd.cmd_type = cmd_type
         goal.cmd.tool_id = self._tool_cfg["id"]
@@ -155,14 +183,24 @@ class PickAndPlaceExecutorSync:
         goal.cmd.max_torque_percentage = self._tool_cfg["max"]
         goal.cmd.hold_torque_percentage = self._tool_cfg["hold"]
         send_future = self._tool.send_goal_async(goal)
-        rclpy.spin_until_future_complete(self._node, send_future)
-        goal_handle = send_future.result()
+
+        #rclpy.spin_until_future_complete(self._node, send_future)
+        send_future.add_done_callback(lambda fut: self._on_goal_response_tool(fut, cmd_type, activate))
+        #rclpy.spin_until_future_complete(self._node, result_future)
+        #self._node.get_logger().info(f"Tool cmd completed (cmd_type={cmd_type})")
+
+
+    def _on_goal_response_tool(self, future, cmd_type, activate):
+        goal_handle = future.result()
         if not goal_handle.accepted:
             self._node.get_logger().error("Tool command rejected")
             return
         result_future = goal_handle.get_result_async()
-        rclpy.spin_until_future_complete(self._node, result_future)
+        result_future.add_done_callback(lambda fut: self._on_result_response_tool(fut, cmd_type))
+
+    def _on_result_response_tool(self, future, cmd_type):
         self._node.get_logger().info(f"Tool cmd completed (cmd_type={cmd_type})")
+        self._is_blocked = False
 
 
 class QualityCheckNodeSync(Node):
@@ -204,30 +242,37 @@ class QualityCheckNodeSync(Node):
         if not self._safety_client.wait_for_service(timeout_sec=5.0):
             self.get_logger().warn("Service /get_safety not available at startup; will retry in loop")
 
+        self._safety_state = None
+        self._blocked_service = False
         self._cb_group = ReentrantCallbackGroup()
         self.loop = self.create_timer(0.1, self.run_loop_sync, self._cb_group)
 
         self.get_logger().info("quality_check_node_sync started: monitoring sensor and controlling conveyor")
 
 
-    def _get_safety_state(self) -> str:
+    def _get_safety_state(self): 
         if not self._safety_client.service_is_ready():
             self._safety_client.wait_for_service(timeout_sec=0.5)
-        try:
-            req = GetSafety.Request()
-            future = self._safety_client.call_async(req)
-            rclpy.spin_until_future_complete(self, future)
-            resp = future.result()
-            if resp is None or not hasattr(resp, 'state'):
-                return 'unsafe'
-            return (resp.state or '').lower()
-        except Exception as exc:
-            self.get_logger().warn(f"get_safety call failed: {exc}")
-            return 'unsafe'
+        
+        req = GetSafety.Request()
+        self._blocked_service = True
+        future = self._safety_client.call_async(req)
 
+        #rclpy.spin_until_future_complete(self, future)
+
+        future.add_done_callback(lambda fut: self._on_safety_state_response(fut))
+            
+
+    def _on_safety_state_response(self, future):
+        resp = future.result()
+        self.get_logger().info(f"Safety state response: {resp}")
+        if resp.state == 'safe':
+            self._safety_state = 'safe'
+        else:
+            self._safety_state = 'unsafe'
+        self._blocked_service = False
 
     def run_loop_sync(self):
-        self.get_logger().info(f"QualityCheckNodeSync loop: {self._last_object_detected}")
         if self._last_object_detected is None or False:
             return
 
@@ -237,9 +282,18 @@ class QualityCheckNodeSync(Node):
         if self._last_object_detected and not self._in_pick_place:
             self._in_pick_place = True
             self.pick_place.execute_first_phase()   
-            safety = self._get_safety_state()
-            target = self.pick_place._poses["safe"] if safety == "safe" else self.pick_place._poses["unsafe"]
-            self.get_logger().info(f"Second phase target decided by service: {'SAFE' if safety == 'safe' else 'UNSAFE'}")
+
+
+
+            self._get_safety_state()
+
+            while self._blocked_service:
+                time.sleep(0.5)
+                self.get_logger().info("Waiting for safety state to be decided")
+
+
+            target = self.pick_place._poses["safe"] if self._safety_state == "safe" else self.pick_place._poses["unsafe"]
+            self.get_logger().info(f"Second phase target decided by service: {'SAFE' if self._safety_state == 'safe' else 'UNSAFE'}")
             self.pick_place.execute_second_phase(target)
             self._in_pick_place = False
             return
