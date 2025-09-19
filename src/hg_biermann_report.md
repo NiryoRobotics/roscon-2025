@@ -108,7 +108,7 @@ We also introduce a QoS Profile to ensure that the messages from the IR sensor a
 
 Both subscriptions lead to the executions of the respectives methods `_on_digital_state` and `_on_safety_state`.
 
-The IR sensor returns a boolean value, stored in the 5th index of the digital inputs table. This table is a list of boolean values, each representing the state of a digital input and published each time there is a change of at least one digital input.
+The IR sensor returns a boolean value, stored in the 5th index of the digital inputs table. This table is a list of boolean values, each representing the state of a digital input and published each time there is a change of at least one digital input. I decided to define the subscription to the `digital_state_topic` here as the IR sensor is plugged to the robot and not to the conveyor belt in real life. 
 
 The table is published on the `digital_state_topic` and the message is a `DigitalIOState` message type.
 
@@ -312,11 +312,114 @@ To solve that we recommand to use a service to get the safety state. This servic
 
 The client requests are not fully fullfiled in term of performances. We, professors judge that the whole architecture of the project is not optimized. The conveyor belt belonging to the robot leads to the impossibility for it to run while the robot is performing the operation. 
 
-A way to solve the problem would be to use a Multi-threaded executor to run the conveyor belt and the robot in parallel. This will implies to change the architecture of the project to a more complex one, with a main node and a conveyor node. 
+A way to solve the problem would be to consider the robot and the conveyor belt as two different entities, each one being its own node. 
+
+Here is a scheme of the suggested architecture :
+
+```mermaid
+flowchart TD
+A[Quality Check **Node**]
+B[Conveyor Belt **Node**]
+B -->|object detected| A
+A -->|has attribute| C[PickAndPlaceExecutor **Class**]
+D[raspberry pi **Node**] -->|gives safety| A
+C -->|controls| E[Robot Motors]
+B -->|controls| F[Conveyor Motor]
+Z[IR sensor] --> B
+```
+Both The conveyor belt are now independently controlled with this architecture, each one being its own node. Note that the IR sensor is now owned by the conveyor belt class as the IR sensor is located on the conveyor belt, even if plugged to the robot, as its message only sends data used to control the conveyor belt.
+
+In ROS2, there is a way to ensure that both nodes are launched in parallell, using multithreading. Each node being executed in a seperate thread, we can ensure that no blocking action will stop the other node from working.
+
+To perform this, we can use ROS2 Executors, and especially the `MultiThreadedExecutor`, that runs each node in a seperate thread.
+
+Example : 
+
+```python
+#!/usr/bin/env python3
+
+import rclpy
+from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+import time
+
+
+class Node1(Node):
+    def __init__(self):
+        super().__init__("node1")
+        self.timer1 = self.create_timer(1.0, self.callback_timer1)
+
+    def callback_timer1(self):
+        time.sleep(2.0)
+        self.get_logger().info("cb 1")
+
+
+class Node2(Node):
+    def __init__(self):
+        super().__init__("node2")
+        self.timer2 = self.create_timer(1.0, self.callback_timer2)
+
+    def callback_timer2(self):
+        time.sleep(2.0)
+        self.get_logger().info("cb 2")
+
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    node1 = Node1()
+    node2 = Node2()
+
+    executor = MultiThreadedExecutor()
+    executor.add_node(node1)
+    executor.add_node(node2)
+
+    try:
+        executor.spin()
+    finally:
+        executor.shutdown()
+        node1.destroy_node()
+        node2.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
+```
+
+These two basic nodes are now able to run in parallel, each one in its own thread.
+
+Another important concept about MultiThreadedExecutor is that by default the callbacks are executed sperately and wait for each other. This is because a default callback is a Mutually Exclusive Callback Group, meaning that only one callback can be executed at a time.  Declaring a `ReentrantCallbackGroup` will allow the callbacks to be executed in parallel. In a Reentrant Callback Group, the callbacks are executed each time the timer call them, meaning they are not waiting for any other callback to be executed. Please consider building your new architecture with this concept in mind.
+
+Note that the main challenge of transforming your code to this new architecture will be to avoid **deadlocks**. Deadlocks are a situation where two or more threads are waiting for each other to release a resource, causing a deadlock. It is very common to have deadlocks in a multi-threaded architecture, especially when creating action clients and service clients. 
+
+In the previous code, you used the `rclpy.spin_until_future_complete` function to wait for the future to be completed. This function is not thread-safe and will cause a deadlock. Indeed, the executor is already spinning, and calling this function will cause the executor to spin again, waiting for an answer that should come in this exact same thread, that is block waiting for itself. What a tricky situation !
+
+One strategy to avoid this is to use the `add_done_callback` method of the future, to add a callback that will be executed when the future is completed. This callback should not be executed in the same thread as the one calling the `add_done_callback` method, avoiding the deadlock, freeing the thread from the waiting loop.
+
+Example : 
+```python
+future = self._robot.send_goal_async(goal)
+#rclpy.spin_until_future_complete(self._node, future) will cause a deadlock
+future.add_done_callback(lambda fut: self._on_result_response(fut))
+
+def _on_result_response(self, future):
+    result = future.result()
+    self._node.get_logger().info("Entered the callback")
+```
+
+
+
+
+
+Note that the callbacks should communicate their state to the main thread, using a shared variable to prevent the execution of multiple actions at the same time, now that the response is recieved in a different thread.
 
 
 
 
 ## Bonus
 
-## Conclusion
+Hey ! Pierre's talking, I just infiltrated Hans-Günther's report ! I just wanted you to know that the other part of your team read Paul-Louis's report and got completely different feedbacks ! One told me that they still don't have MultiThreading, meaning that their conveyor is not working as fine as yours... Would you mind checking if you can implement this feature in their code ? I think it would be a great improvement for the project !
+
+
+
