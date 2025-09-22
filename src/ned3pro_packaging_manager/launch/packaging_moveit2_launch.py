@@ -131,12 +131,12 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        #rviz_config_arg,
+        rviz_config_arg,
         conveyor_id_arg,
         speed_arg,
         sensor_index_arg,
         static_tf,
         #move_group_node,
-        #rviz_node,
+        rviz_node,
         packaging_moveit2_node,
     ])

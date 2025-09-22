@@ -11,7 +11,9 @@ from rclpy.action import ActionClient
 from niryo_ned_ros2_interfaces.srv import ControlConveyor
 from niryo_ned_ros2_interfaces.msg import DigitalIOState
 from niryo_ned_ros2_interfaces.action import Tool
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Pose
+from moveit_msgs.msg import CollisionObject
+from shape_msgs.msg import SolidPrimitive
 
 # MoveIt2 Python API imports (exactly as in the official example)
 from moveit.core.robot_state import RobotState
@@ -72,6 +74,7 @@ class PickAndPlaceExecutorMoveIt2:
         try:
             self._moveit = MoveItPy(node_name="moveit_py_packaging")
             self._arm = self._moveit.get_planning_component(group_name)
+            self._planning_scene_monitor = self._moveit.get_planning_scene_monitor()
             
             self._logger.info("MoveItPy instance created for packaging")
             
@@ -319,6 +322,150 @@ class PickAndPlaceExecutorMoveIt2:
         self._logger.info("Opening gripper")
         return self._tool_cmd(cmd_type=1, activate=True)  # cmd_type=1: open
 
+    def add_collision_object(self, object_id: str, object_type: str = "box", 
+                           position: tuple = (0.0, 0.0, 0.0), 
+                           dimensions: tuple = (0.1, 0.1, 0.1),
+                           orientation: tuple = (0.0, 0.0, 0.0, 1.0),
+                           frame_id: str = "base_link") -> bool:
+        """
+        Ajouter un objet de collision à la scène de planification.
+        
+        Args:
+            object_id (str): Identifiant unique de l'objet
+            object_type (str): Type d'objet ("box", "cylinder", "sphere")
+            position (tuple): Position (x, y, z) en mètres
+            dimensions (tuple): Dimensions selon le type:
+                - box: (longueur, largeur, hauteur)
+                - cylinder: (rayon, hauteur, 0)
+                - sphere: (rayon, 0, 0)
+            orientation (tuple): Orientation quaternion (qx, qy, qz, qw)
+            frame_id (str): Frame de référence (défaut: "base_link")
+        
+        Returns:
+            bool: True si l'objet a été ajouté avec succès
+        """
+        try:
+            with self._planning_scene_monitor.read_write() as scene:
+                collision_object = CollisionObject()
+                collision_object.header.frame_id = frame_id
+                collision_object.id = object_id
+                
+                # Créer la primitive selon le type
+                primitive = SolidPrimitive()
+                
+                if object_type.lower() == "box":
+                    primitive.type = SolidPrimitive.BOX
+                    primitive.dimensions = list(dimensions)
+                elif object_type.lower() == "cylinder":
+                    primitive.type = SolidPrimitive.CYLINDER
+                    primitive.dimensions = [dimensions[0], dimensions[1]]  # rayon, hauteur
+                elif object_type.lower() == "sphere":
+                    primitive.type = SolidPrimitive.SPHERE
+                    primitive.dimensions = [dimensions[0]]  # rayon seulement
+                else:
+                    self._logger.error(f"Type d'objet non supporté: {object_type}")
+                    return False
+                
+                # Créer la pose
+                pose = Pose()
+                pose.position.x = position[0]
+                pose.position.y = position[1]
+                pose.position.z = position[2]
+                pose.orientation.x = orientation[0]
+                pose.orientation.y = orientation[1]
+                pose.orientation.z = orientation[2]
+                pose.orientation.w = orientation[3]
+                
+                # Ajouter à l'objet de collision
+                collision_object.primitives.append(primitive)
+                collision_object.primitive_poses.append(pose)
+                collision_object.operation = CollisionObject.ADD
+                
+                # Appliquer à la scène
+                scene.apply_collision_object(collision_object)
+                scene.current_state.update()
+                
+                self._logger.info(f"Objet de collision '{object_id}' ajouté: {object_type} à {position}")
+                return True
+                
+        except Exception as e:
+            self._logger.error(f"Erreur lors de l'ajout de l'objet de collision '{object_id}': {e}")
+            return False
+
+    def remove_collision_object(self, object_id: str) -> bool:
+        """
+        Supprimer un objet de collision de la scène de planification.
+        
+        Args:
+            object_id (str): Identifiant de l'objet à supprimer
+        
+        Returns:
+            bool: True si l'objet a été supprimé avec succès
+        """
+        try:
+            with self._planning_scene_monitor.read_write() as scene:
+                collision_object = CollisionObject()
+                collision_object.id = object_id
+                collision_object.operation = CollisionObject.REMOVE
+                
+                scene.apply_collision_object(collision_object)
+                scene.current_state.update()
+                
+                self._logger.info(f"Objet de collision '{object_id}' supprimé")
+                return True
+                
+        except Exception as e:
+            self._logger.error(f"Erreur lors de la suppression de l'objet de collision '{object_id}': {e}")
+            return False
+
+    def remove_all_collision_objects(self) -> bool:
+        """
+        Supprimer tous les objets de collision de la scène de planification.
+        
+        Returns:
+            bool: True si tous les objets ont été supprimés avec succès
+        """
+        try:
+            with self._planning_scene_monitor.read_write() as scene:
+                scene.remove_all_collision_objects()
+                scene.current_state.update()
+                
+                self._logger.info("Tous les objets de collision ont été supprimés")
+                return True
+                
+        except Exception as e:
+            self._logger.error(f"Erreur lors de la suppression de tous les objets de collision: {e}")
+            return False
+
+    def check_collision(self, robot_state=None, joint_group_name: str = "arm") -> bool:
+        """
+        Vérifier si l'état actuel du robot est en collision.
+        
+        Args:
+            robot_state: État du robot à vérifier (None pour l'état actuel)
+            joint_group_name (str): Nom du groupe de joints
+        
+        Returns:
+            bool: True si le robot est en collision
+        """
+        try:
+            with self._planning_scene_monitor.read_only() as scene:
+                if robot_state is None:
+                    robot_state = scene.current_state
+                
+                collision_status = scene.is_state_colliding(
+                    robot_state=robot_state, 
+                    joint_model_group_name=joint_group_name, 
+                    verbose=True
+                )
+                
+                self._logger.info(f"État de collision: {'EN COLLISION' if collision_status else 'SANS COLLISION'}")
+                return collision_status
+                
+        except Exception as e:
+            self._logger.error(f"Erreur lors de la vérification de collision: {e}")
+            return False
+
 
 class PackagingNodeMoveIt2(Node):
     def __init__(self):
@@ -360,6 +507,13 @@ class PackagingNodeMoveIt2(Node):
         self.create_subscription(DigitalIOState, self.digital_state_topic, self._on_digital_state, qos)
 
         self.get_logger().info("packaging_node_moveit2 started: monitoring sensor, controlling conveyor and robot")
+
+        self.pick_place.add_collision_object(
+            object_id="obstacle_box",
+            object_type="box",
+            position=(0.2, 0.1, 0.0),
+            dimensions=(0.05, 0.05, 0.6)
+        )
 
     def _load_poses(self) -> dict:
         """Load poses from poses.yaml file"""
@@ -416,6 +570,25 @@ class PackagingNodeMoveIt2(Node):
     def _execute_pick_sequence(self):
         """Execute the complete pick sequence: grip position → close gripper → return to 0.0"""
         try:
+            # Exemple d'ajout d'objets de collision pour simuler des obstacles
+            # Vous pouvez décommenter ces lignes pour tester
+            
+            # # Ajouter une boîte comme obstacle
+            # self.pick_place.add_collision_object(
+            #     object_id="obstacle_box",
+            #     object_type="box",
+            #     position=(0.2, 0.1, 0.3),
+            #     dimensions=(0.1, 0.1, 0.2)
+            # )
+            
+            # # Ajouter un cylindre comme obstacle
+            # self.pick_place.add_collision_object(
+            #     object_id="obstacle_cylinder",
+            #     object_type="cylinder",
+            #     position=(0.15, -0.1, 0.4),
+            #     dimensions=(0.05, 0.15, 0)  # rayon=0.05m, hauteur=0.15m
+            # )
+
             grip_pose = self.poses.get('grip')
             success = self.pick_place.use_single_pipeline_planning(grip_pose, "ompl_rrtc")
 
