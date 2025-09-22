@@ -508,12 +508,12 @@ class PackagingNodeMoveIt2(Node):
 
         self.get_logger().info("packaging_node_moveit2 started: monitoring sensor, controlling conveyor and robot")
 
-        self.pick_place.add_collision_object(
-            object_id="obstacle_box",
-            object_type="box",
-            position=(0.2, 0.1, 0.0),
-            dimensions=(0.05, 0.05, 0.6)
-        )
+        #self.pick_place.add_collision_object(
+        #    object_id="obstacle_box",
+        #    object_type="box",
+        #    position=(0.2, 0.1, 0.0),
+        #    dimensions=(0.05, 0.05, 0.6)
+        #)
 
     def _load_poses(self) -> dict:
         """Load poses from poses.yaml file"""

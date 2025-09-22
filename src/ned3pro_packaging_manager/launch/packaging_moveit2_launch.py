@@ -73,14 +73,7 @@ def generate_launch_description():
         .to_moveit_configs()
     )
 
-    move_group_node = Node(
-        package="moveit_ros_move_group",
-        executable="move_group",
-        output="screen",
-        parameters=[moveit2_config.to_dict()],
-        arguments=["--ros-args", "--log-level", "info"],
-        
-    )
+
 
     # MoveIt2 Python node
     packaging_moveit2_node = Node(

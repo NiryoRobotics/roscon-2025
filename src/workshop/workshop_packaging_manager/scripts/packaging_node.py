@@ -30,7 +30,7 @@ from ament_index_python.packages import get_package_share_directory
 
 class PackagingNode(Node) :
     def __init__(self):
-        super().__init__("packaging_node_moveit2")
+        super().__init__("packaging_node")
 
         # --- Parameters ---
         self.conveyor_id = self.declare_parameter("conveyor_id", 9).get_parameter_value().integer_value
@@ -73,7 +73,7 @@ class PackagingNode(Node) :
         )
         self.create_subscription(DigitalIOState, self.digital_state_topic, self._on_digital_state, qos)
 
-        self.get_logger().info("packaging_node_moveit2 started: monitoring sensor, controlling conveyor and robot")
+        self.get_logger().info("packaging_node started: monitoring sensor, controlling conveyor and robot")
 
     def _on_digital_state(self, msg: DigitalIOState) -> None:
         # TODO: Implement the digital state method
@@ -199,69 +199,7 @@ class PickAndPlaceExecutorMoveIt2:
 
         raise ValueError("Unsupported pose format. Provide PoseStamped, dict{x,y,z,qx,qy,qz,qw}, or [x,y,z,qx,qy,qz,qw].")
 
-    def go_to_joints(self, joints: list[float]) -> bool:
-        """Move to joint positions using RobotState"""
-        try:
-            # instantiate a RobotState instance using the current robot model
-            robot_model = self._moveit.get_robot_model()
-            robot_state = RobotState(robot_model)
-            
-            # Set joint positions for NED3 Pro (6 joints)
-            joint_names = [f"joint_{i+1}" for i in range(6)]  # joint_1 to joint_6 for NED3 Pro
-            joint_values = dict(zip(joint_names, joints))
-            robot_state.joint_positions = joint_values
-            
-            # set plan start state to current state
-            self._arm.set_start_state_to_current_state()
-            
-            # set goal state to the initialized robot state
-            self._logger.info("Set goal state to joint positions")
-            self._arm.set_goal_state(robot_state=robot_state)
-            
-            # plan to goal
-            return self.plan_and_execute(sleep_time=0.0)
-                
-        except Exception as e:
-            self._logger.error(f"Error in go_to_joints: {e}")
-            return False
 
-    def go_to_pose(self, pose: PoseStamped, pose_link: str = "hand_link") -> bool:
-        """Move to pose using PoseStamped message"""
-        try:
-            # set plan start state to current state
-            self._arm.set_start_state_to_current_state()
-            
-            # set pose goal with PoseStamped message
-            self._arm.set_goal_state(pose_stamped_msg=pose, pose_link=pose_link)
-            
-            # plan to goal
-            return self.plan_and_execute(sleep_time=0.0)
-                
-        except Exception as e:
-            self._logger.error(f"Error in go_to_pose: {e}")
-            return False
-
-    def move_to_target_pose(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, 
-                           qx: float = 0.0, qy: float = 0.0, qz: float = 0.0, qw: float = 1.0) -> bool:
-        """Move to target pose with given position and orientation"""
-        pose = PoseStamped()
-        pose.header.frame_id = "base_link"  # Base frame for NED3 Pro
-        pose.header.stamp = self._node.get_clock().now().to_msg()
-        pose.pose.position.x = x
-        pose.pose.position.y = y
-        pose.pose.position.z = z
-        pose.pose.orientation.x = qx
-        pose.pose.orientation.y = qy
-        pose.pose.orientation.z = qz
-        pose.pose.orientation.w = qw
-        
-        self._logger.info(f"Moving to pose: position=({x}, {y}, {z}), orientation=({qx}, {qy}, {qz}, {qw})")
-        
-        return self.go_to_pose(pose)
-
-    def move_to_joint_positions(self, joints: list[float]) -> bool:
-        self._logger.info(f"Moving to joint positions: {joints}")
-        return self.go_to_joints(joints)
 
     def use_single_pipeline_planning(self, target=None, pipeline_name: str = "ompl_rrtc", pose_link: str = "hand_link") -> bool:
         """Single-pipeline planning using either joints or Cartesian pose.
@@ -339,36 +277,9 @@ class PickAndPlaceExecutorMoveIt2:
             return False
 
     def _tool_cmd(self, cmd_type: int, activate: bool):
-        """Send tool command (gripper open/close) using action server"""
-        goal = Tool.Goal()
-        goal.cmd.cmd_type = cmd_type
-        goal.cmd.tool_id = self._tool_cfg["id"]
-        goal.cmd.activate = activate
-        goal.cmd.max_torque_percentage = self._tool_cfg["max"]
-        goal.cmd.hold_torque_percentage = self._tool_cfg["hold"]
-        
-        send_future = self._tool_action.send_goal_async(goal)
-        rclpy.spin_until_future_complete(self._node, send_future)
-        goal_handle = send_future.result()
-        
-        if not goal_handle.accepted:
-            self._logger.error("Tool command rejected")
-            return False
-            
-        result_future = goal_handle.get_result_async()
-        rclpy.spin_until_future_complete(self._node, result_future)
-        self._logger.info(f"Tool cmd completed (cmd_type={cmd_type}, activate={activate})")
-        return True
+        # TODO: Implement the tool command method
+        pass
 
-    def close_gripper(self) -> bool:
-        """Close the gripper"""
-        self._logger.info("Closing gripper")
-        return self._tool_cmd(cmd_type=2, activate=True)  # cmd_type=2: close
-
-    def open_gripper(self) -> bool:
-        """Open the gripper"""
-        self._logger.info("Opening gripper")
-        return self._tool_cmd(cmd_type=1, activate=True)  # cmd_type=1: open
 
     def add_collision_object(self, object_id: str, object_type: str = "box", 
                            position: tuple = (0.0, 0.0, 0.0), 

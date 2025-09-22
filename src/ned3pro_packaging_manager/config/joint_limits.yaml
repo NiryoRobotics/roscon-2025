@@ -17,7 +17,7 @@ joint_limits:
     has_velocity_limits: true
     max_velocity: 1.047 # = stepper velocity profile in rad/s
     has_acceleration_limits: true
-    max_acceleration: 2.18 # = stepper acceleration profile in rad/s²
+    max_acceleration: 4.18 # = stepper acceleration profile in rad/s²
   joint_3:
     has_velocity_limits: true
     max_velocity: 1.5 # = stepper velocity profile in rad/s
