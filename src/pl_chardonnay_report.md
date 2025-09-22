@@ -536,7 +536,7 @@ To start, let's re-activate the collision object and the Rviz node in the launch
 
 Running the solution again we now see that the placed object is completely not relevant, and do not reprensent the real situation. Besides this random object being huge, the robot tries to reach its goal without entering in collision with it, leading to the generation of crazy trajectories : 
 
-<img src="assets/crazy_trajectory.png" alt="Crazy Trajectory" width="50%" />
+<img src="assets/crazy_object.png" alt="Crazy Trajectory" width="50%" />
 
 Your first goal will be to add an operational logic, creating objects that effectively represent the real situation. As we are collding with the sides of the box, we can imagine collisions objects to be thin boxes that represent each wall of the box. 
 
