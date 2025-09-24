@@ -38,8 +38,11 @@ class DetectionNaiveNode(Node):
         self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 10)
         self.timer_ = self.create_timer(5.0, self._on_timer)
 
-    def _apply_color_filters(self, frame):
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    def _apply_performative_filters(self, frame):
+        # Reduce to 144p resolution (naive approach)
+        performative_filters = cv2.resize(frame, (256, 144), interpolation=cv2.INTER_NEAREST)
+        
+        hsv = cv2.cvtColor(performative_filters, cv2.COLOR_BGR2HSV)
 
         lower_red1 = np.array([0, 120, 70])
         upper_red1 = np.array([10, 255, 255])
@@ -55,10 +58,10 @@ class DetectionNaiveNode(Node):
 
         mask = cv2.bitwise_or(mask_red, mask_blue)
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(performative_filters, cv2.COLOR_BGR2GRAY)
         gray_bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
-        purple = np.full_like(frame, (128, 0, 128)) 
+        purple = np.full_like(performative_filters, (128, 0, 128)) 
 
         result = np.where(mask[..., None].astype(bool), purple, gray_bgr)
         
@@ -109,7 +112,7 @@ class DetectionNaiveNode(Node):
                 self.publisher_.publish(msg)
                 return
             
-            filtered_image = self._apply_color_filters(frame)
+            filtered_image = self._apply_performative_filters(frame)
             
             safety_state = self._get_safety_prediction(filtered_image)
             

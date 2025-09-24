@@ -283,12 +283,141 @@ When the second pick and place is performed, we return to the `grip` position to
 
 ### Raspberry side
 
+The client had some requirements about performances. That's why they asked us to create an interactive interface that can display the internal state of the whole system. As I wanted my client to have the best experience possible, that is to say : a performative, free to use and lightweight, python based HCI. Hence, I obviously typed into google, "Best HCI python 2025 free download no virus" and found this gem : 
+
+It displays : The overall state of the system, the image taken by the camera, the latest safety state detected, the numbers of objects taken in charge today and the proportionality of them being unsafe. It also calculates the average time to perform a pick and place operation.
+
+
+Another function of the Raspberry pi was to perform the quality check itself. To perform that, we have a testing zone where a vial is placed by the QC robot. I was given a pre-trained YOLO v8 model to detect the safety state of the vial. The model is trained to detect the safety state of the vial, meaning that it can detect if the vial is safe or unsafe. I was also given this link : https://universe.roboflow.com/louloups-sign/safety_check-zdmjr/browse?queryText=&pageSize=50&startingIndex=0&browseQuery=true which shows the dataset on which the model was trained.
+
+To perform the quality check, I created a script into the raspberry pi manager package. This script is called `detection.py`. It has a main class that is called `DetectionNode`. It is initialized with the model path, the camera index and the topic name to publish the safety state. It also loads the AI model that is based on YOLO v8. 
+
+```python
+    def __init__(self) -> None:
+        super().__init__('detection')
+        self.get_logger().info('detection node initialised')
+        
+        model_path = "/workspaces/roscon-2025/src/assets/safety_check_model.pt"
+        if not os.path.exists(model_path):
+            self.get_logger().error(f"Model not found: {model_path}")
+            self.model = None
+        else:
+            try:
+                self.model = YOLO(model_path)
+                self.get_logger().info("YOLO v8 model loaded successfully")
+            except Exception as e:
+                self.get_logger().error(f"Error loading model: {e}")
+                self.model = None
+        
+        self.cap = cv2.VideoCapture(0)
+        if not self.cap.isOpened():
+            self.get_logger().error("Impossible to open the camera")
+            self.cap = None
+        else:
+            self.get_logger().info("Camera initialised successfully")
+        
+        self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 10)
+
+```
+
+Then I asked myself, How can the quality check can be performed on the raspberry pi, and then be sent to the Robot's Node ? What a tricky question for my mind, but I found out and remembereed that we were using ROS2. Even if I do not know a lot about ROS2, i know that main part of the communication is done through topics. So I created a publisher to the `quality_check/safety_state` topic to publish the safety state, and attached a timer to publish the safety state. I wanted to have the best performances possible, so I measured the mean time for the robot to perform a trajectory and I find out it was approximatively 5 seconds. I thus set the timer to 5 seconds to ensure that the safety state is published at the right time, i.e when the robot performed its full trajectory. 
+
+```python
+    self.timer_ = self.create_timer(5.0, self._on_timer)
+```
+Inside the timer callback, the logic should be simple. We can use the camera to take an image via `opencv-python` (or `cv2`). **You might have to install it on the rapsberry pi if this has not been done already.** 
+
+```python
+    ret, frame = self.cap.read()
+```
+`ret` is a boolean value that is `True` if the image is successfully captured, `False` otherwise. `frame` is the image captured by the camera.
+
+I know that inference run on a CPU is not the best idea, as it can be very slow. I had an idea which was to process the image before sending to the model, so that it can be more lightweight, while fitting the model's dataset. A human brain has around 10 Billion neurons, while ChatGPT has around 175 Billion neurons. So I decided to prompt chat gpt to adress the most optmized filters to apply to the image to fit the model's dataset while being as performative as possible. 
+
+This is the prompt I used : 
+
+*Give me the code in python to process an image that merges red and blue in one mask and the rest in another one. Put the other one to a gray scale and optimize my image so that I have the best performances possible.*
+
+It directly returned the code, so I pasted it in my script and it compiled ! 
+
+```python
+    filtered_image = self._apply_performative_filters(frame)
+
+    def _apply_performative_filters(self, frame):
+        performative_filters = cv2.resize(frame, (256, 144), interpolation=cv2.INTER_NEAREST)
+        
+        hsv = cv2.cvtColor(performative_filters, cv2.COLOR_BGR2HSV)
+
+        lower_red1 = np.array([0, 120, 70])
+        upper_red1 = np.array([10, 255, 255])
+        lower_red2 = np.array([170, 120, 70])
+        upper_red2 = np.array([180, 255, 255])
+        mask_red1 = cv2.inRange(hsv, lower_red1, upper_red1)
+        mask_red2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        mask_red = cv2.bitwise_or(mask_red1, mask_red2)
+
+        lower_blue = np.array([100, 150, 50])
+        upper_blue = np.array([140, 255, 255])
+        mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+
+        mask = cv2.bitwise_or(mask_red, mask_blue)
+
+        gray = cv2.cvtColor(performative_filters, cv2.COLOR_BGR2GRAY)
+        gray_bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+
+        purple = np.full_like(performative_filters, (128, 0, 128)) 
+
+        result = np.where(mask[..., None].astype(bool), purple, gray_bgr)
+        
+        return result
+
+```
+I then coded a method to get the safety state from the model : 
+
+```python
+    safety_state = self._get_safety_prediction(filtered_image)
+```
+
+The method `_get_safety_prediction` is a bit more complex. It is based on the YOLO v8 model. To predict the class from a YOLO model we can use : 
+
+```python
+results = self.model.predict(filtered_image, verbose=False)
+```
+It returns a list of results, each result being a dictionary containing the class name and the confidence score. 
+
+Using YOLO methods, we can extract the class name and the confidence score from the result.
+
+```python
+class_name = results[0].names[results[0].probs.top1]
+confidence_score = results[0].probs.top1conf.item()
+```
+We finally return the safety state, which is either "safe" or "unsafe".
+
+```python
+return "safe" if class_name.lower() == "safe" else "unsafe"
+```
+
+I then published the safety state to the topic : 
+
+```python
+msg = String()
+msg.data = safety_state
+self.publisher_.publish(msg)
+```
+
+Note that I was not able to see the parameters applied to the camera on the HMI. I thought that maybe human eye cannot make the difference between processed and unprocessed image as GPT, which I think is not human, decided on the parameters. But I 100% trust GPT as it has more neurons than me. 
+
+
+
+
 ### Nota Bene
 To make the conveyor runs, you need to initialize it by calling a niryo service. You just have to call it once, not each time you run the program. 
 
 ```bash
 ros2 service call /niryo_robot/conveyor/ping_and_set_conveyor niryo_ned_ros2_interfaces/srv/SetConveyor "{cmd: 1, id: 9}"
 ```
+
+On the raspberry side, make sure the python packages `opencv-python` and `ultralytics` are installed.
 
 ## Professor's Feedback
 
