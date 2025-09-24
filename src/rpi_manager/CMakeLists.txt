@@ -12,6 +12,7 @@ install(
   PROGRAMS
     scripts/detection_naive.py
     scripts/detection.py
+    scripts/detection_test.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
