@@ -176,7 +176,7 @@ class PickAndPlaceExecutorMoveIt2:
             self._logger.error(f"Error in go_to_joints: {e}")
             return False
 
-    def go_to_pose(self, pose: PoseStamped, pose_link: str = "hand_link") -> bool:
+    def go_to_pose(self, pose: PoseStamped, pose_link: str = "tool_link") -> bool:
         """Move to pose using PoseStamped message - following official example pattern"""
         try:
             # set plan start state to current state
@@ -215,7 +215,7 @@ class PickAndPlaceExecutorMoveIt2:
         self._logger.info(f"Moving to joint positions: {joints}")
         return self.go_to_joints(joints)
 
-    def use_single_pipeline_planning(self, target=None, pipeline_name: str = "ompl_rrtc", pose_link: str = "hand_link") -> bool:
+    def use_single_pipeline_planning(self, target=None, pipeline_name: str = "ompl_rrtc", pose_link: str = "tool_link") -> bool:
         """Single-pipeline planning using either joints or Cartesian pose.
         - If target is a list of 6 floats → interpreted as joint targets
         - If target is PoseStamped | dict | list[7] → interpreted as Cartesian pose
@@ -253,7 +253,7 @@ class PickAndPlaceExecutorMoveIt2:
             self._logger.error(f"Error in single-pipeline planning ({pipeline_name}): {e}")
             return False
 
-    def use_multi_pipeline_planning(self, target=None, pose_link: str = "hand_link") -> bool:
+    def use_multi_pipeline_planning(self, target=None, pose_link: str = "tool_link") -> bool:
         """Multi-pipeline planning using either joints or Cartesian pose.
         - If target is a list of 6 floats → interpreted as joint targets
         - If target is PoseStamped | dict | list[7] → interpreted as Cartesian pose

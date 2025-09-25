@@ -2,6 +2,8 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 import cv2
 import numpy as np
 from ultralytics import YOLO
@@ -12,6 +14,9 @@ class DetectionNaiveNode(Node):
     def __init__(self) -> None:
         super().__init__('detection_naive')
         self.get_logger().info('detection_naive node initialised')
+        
+        # Initialize CV bridge for image conversion
+        self.bridge = CvBridge()
         
         # Load YOLO v8 model
         model_path = "/workspaces/roscon-2025/src/assets/safety_check_model.pt"
@@ -36,6 +41,10 @@ class DetectionNaiveNode(Node):
         
         # Create publisher for topic
         self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 10)
+        
+        # Create image publisher
+        self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 10)
+        
         self.timer_ = self.create_timer(5.0, self._on_timer)
 
     def _apply_performative_filters(self, frame):
@@ -111,6 +120,13 @@ class DetectionNaiveNode(Node):
                 msg.data = 'unsafe'
                 self.publisher_.publish(msg)
                 return
+            
+            # Publish the raw camera frame
+            try:
+                image_msg = self.bridge.cv2_to_imgmsg(frame, "bgr8")
+                self.image_publisher.publish(image_msg)
+            except Exception as e:
+                self.get_logger().warn(f"Failed to publish image: {e}")
             
             filtered_image = self._apply_performative_filters(frame)
             

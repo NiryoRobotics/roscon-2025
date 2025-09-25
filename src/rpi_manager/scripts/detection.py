@@ -5,6 +5,8 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 import os
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
 
 from rpi_manager.srv import GetSafety
 
@@ -13,6 +15,9 @@ class DetectionNode(Node):
     def __init__(self) -> None:
         super().__init__('detection')
         self.get_logger().info('detection node initialised (service: get_safety)')
+        
+        # Initialize CV bridge for image conversion
+        self.bridge = CvBridge()
         
         model_path = "/workspaces/roscon-2025/src/assets/safety_check_model.pt"
         if not os.path.exists(model_path):
@@ -34,6 +39,9 @@ class DetectionNode(Node):
             self.get_logger().info("Camera initialised successfully")
         
         self._srv = self.create_service(GetSafety, 'get_safety', self._on_get_safety)
+        
+        # Create image publisher
+        self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 10)
 
     def _apply_color_filters(self, frame):
         """Apply color filters to the image"""
@@ -108,6 +116,13 @@ class DetectionNode(Node):
                 self.get_logger().error("Impossible to capture the image")
                 response.state = 'unsafe'
                 return response
+            
+            # Publish the raw camera frame
+            try:
+                image_msg = self.bridge.cv2_to_imgmsg(frame, "bgr8")
+                self.image_publisher.publish(image_msg)
+            except Exception as e:
+                self.get_logger().warn(f"Failed to publish image: {e}")
             
             # Apply color filters
             filtered_image = self._apply_color_filters(frame)

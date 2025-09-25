@@ -13,6 +13,7 @@ install(
     scripts/detection_naive.py
     scripts/detection.py
     scripts/detection_test.py
+    scripts/hmi_standard.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

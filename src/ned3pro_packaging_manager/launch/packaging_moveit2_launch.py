@@ -123,6 +123,15 @@ def generate_launch_description():
         arguments=["--frame-id", "world", "--child-frame-id", "base_link"],
     )
 
+    move_group_node = Node(
+        package="moveit_ros_move_group",
+        executable="move_group",
+        output="screen",
+        parameters=[moveit2_config.to_dict()],
+        arguments=["--ros-args", "--log-level", "info"],
+        
+    )
+
     return LaunchDescription([
         rviz_config_arg,
         conveyor_id_arg,

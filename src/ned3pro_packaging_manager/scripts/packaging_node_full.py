@@ -215,7 +215,7 @@ class PickAndPlaceExecutorMoveIt2:
         self._logger.info(f"Moving to joint positions: {joints}")
         return self.go_to_joints(joints)
 
-    def use_single_pipeline_planning(self, target=None, pipeline_name: str = "ompl_rrtc", pose_link: str = "hand_link") -> bool:
+    def use_single_pipeline_planning(self, target=None, pipeline_name: str = "ompl_rrtc", pose_link: str = "tool_link") -> bool:
         """Single-pipeline planning using either joints or Cartesian pose.
         - If target is a list of 6 floats → interpreted as joint targets
         - If target is PoseStamped | dict | list[7] → interpreted as Cartesian pose
@@ -253,7 +253,7 @@ class PickAndPlaceExecutorMoveIt2:
             self._logger.error(f"Error in single-pipeline planning ({pipeline_name}): {e}")
             return False
 
-    def use_multi_pipeline_planning(self, target=None, pose_link: str = "hand_link") -> bool:
+    def use_multi_pipeline_planning(self, target=None, pose_link: str = "tool_link") -> bool:
         """Multi-pipeline planning using either joints or Cartesian pose.
         - If target is a list of 6 floats → interpreted as joint targets
         - If target is PoseStamped | dict | list[7] → interpreted as Cartesian pose
@@ -497,6 +497,7 @@ class PackagingNodeMoveIt2(Node):
 
         # --- State ---
         self._last_object_detected = None
+        self._loop_count = 0  # Compteur pour suivre le nombre de passages dans la boucle
 
         # --- Subscription ---
         qos = QoSProfile(
@@ -568,7 +569,7 @@ class PackagingNodeMoveIt2(Node):
             self._last_object_detected = False  # Reset to wait for the next object
 
     def _execute_pick_sequence(self):
-        """Execute the complete pick sequence: grip position → close gripper → return to 0.0"""
+        """Execute the complete pick sequence: grip position → close gripper → home pose → intermediate position → open gripper → return to grip"""
         try:
             # Exemple d'ajout d'objets de collision pour simuler des obstacles
             # Vous pouvez décommenter ces lignes pour tester
@@ -590,16 +591,37 @@ class PackagingNodeMoveIt2(Node):
             # )
 
             grip_pose = self.poses.get('grip')
-            success = self.pick_place.use_single_pipeline_planning(grip_pose, "ompl_rrtc")
+            success = self.pick_place.use_single_pipeline_planning(grip_pose, "pilz_ptp")
 
             
             gripper_success = self.pick_place.close_gripper()
 
             home_pose = self.poses.get('place')
-            success2 = self.pick_place.use_single_pipeline_planning(home_pose, "ompl_rrtc")
+            success2 = self.pick_place.use_single_pipeline_planning(home_pose, "pilz_ptp")
+            
+            # 4. Aller à la position intermédiaire avec décrémentation en x
+            intermediate_x = 0.09177011656393808 - (self._loop_count * 0.03)
+            intermediate_pose = {
+                'x': intermediate_x,
+                'y': 0.2841085251085336,
+                'z': 0.17462129016934397,
+                'qx': -0.5402673034761233,
+                'qy': 0.43502689461930927,
+                'qz': 0.5052171450691023,
+                'qw': 0.5134379009001422
+            }
+            
+            self.get_logger().info(f"Position intermédiaire #{self._loop_count + 1}: x={intermediate_x:.6f}")
+            success_intermediate = self.pick_place.use_single_pipeline_planning(intermediate_pose, "pilz_ptp")
+            
+            # 5. Ouvrir le gripper
             gripper_success2 = self.pick_place.open_gripper()
-            success3 = self.pick_place.use_single_pipeline_planning(grip_pose, "ompl_rrtc")
-            if not success2 and success and gripper_success and gripper_success2 and success3:
+            success3 = self.pick_place.use_single_pipeline_planning(grip_pose, "pilz_ptp")
+            
+            # Incrémenter le compteur pour la prochaine itération
+            self._loop_count += 1
+            
+            if not (success and gripper_success and success2 and success_intermediate and gripper_success2 and success3):
                 self.get_logger().error("Failed trajectory")
                 return False
             
