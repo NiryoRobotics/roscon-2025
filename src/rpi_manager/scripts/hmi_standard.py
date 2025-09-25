@@ -13,85 +13,84 @@ from PyQt5.QtCore import QTimer, QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QPixmap, QImage, QFont, QColor, QPalette
 
 
-class ImageSubscriber(QThread):
-    """Thread pour recevoir les images de la caméra"""
-    image_received = pyqtSignal(np.ndarray)
+class ROS2Node(Node):
+    """Single ROS2 node for all subscriptions"""
     
     def __init__(self):
-        super().__init__()
+        super().__init__('hmi_node')
         self.bridge = CvBridge()
-        self.node = None
         
-    def run(self):
-        rclpy.init()
-        self.node = ImageSubscriberNode(self)
-        try:
-            rclpy.spin(self.node)
-        finally:
-            self.node.destroy_node()
-            rclpy.shutdown()
-    
-    def stop(self):
-        if self.node:
-            self.node.destroy_node()
-
-
-class SafetySubscriber(QThread):
-    """Thread pour recevoir l'état de sécurité"""
-    safety_received = pyqtSignal(str)
-    
-    def __init__(self):
-        super().__init__()
-        self.node = None
+        # Store latest data
+        self.latest_image = None
+        self.latest_safety_state = "unknown"
         
-    def run(self):
-        rclpy.init()
-        self.node = SafetySubscriberNode(self)
-        try:
-            rclpy.spin(self.node)
-        finally:
-            self.node.destroy_node()
-    
-    def stop(self):
-        if self.node:
-            self.node.destroy_node()
-
-
-class ImageSubscriberNode(Node):
-    def __init__(self, parent_thread):
-        super().__init__('hmi_image_subscriber')
-        self.parent_thread = parent_thread
-        self.bridge = CvBridge()
-        self.subscription = self.create_subscription(
+        # Create subscriptions
+        self.image_subscription = self.create_subscription(
             Image,
             '/rpi_manager/frame',
             self.image_callback,
             10
         )
-        self.get_logger().info('HMI Image subscriber initialized')
-
-    def image_callback(self, msg):
-        try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            self.parent_thread.image_received.emit(cv_image)
-        except Exception as e:
-            self.get_logger().error(f'Error converting image: {e}')
-
-
-class SafetySubscriberNode(Node):
-    def __init__(self, parent_thread):
-        super().__init__('hmi_safety_subscriber')
-        self.parent_thread = parent_thread
-        self.subscription = self.create_subscription(
+        
+        self.safety_subscription = self.create_subscription(
             String,
             '/quality_check/safety_state',
             self.safety_callback,
             10
         )
-        self.get_logger().info('HMI Safety subscriber initialized')
+        
+        self.get_logger().info('HMI ROS2 node initialized')
+
+    def image_callback(self, msg):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            self.latest_image = cv_image
+        except Exception as e:
+            self.get_logger().error(f'Error converting image: {e}')
 
     def safety_callback(self, msg):
-        self.parent_thread.safety_received.emit(msg.data)
+        self.latest_safety_state = msg.data
+
+
+class ROS2Thread(QThread):
+    """Single thread for ROS2 operations"""
+    image_received = pyqtSignal(np.ndarray)
+    safety_received = pyqtSignal(str)
+    
+    def __init__(self):
+        super().__init__()
+        self.node = None
+        self.running = True
+        
+    def run(self):
+        self.node = ROS2Node()
+        
+        try:
+            while self.running:
+                rclpy.spin_once(self.node, timeout_sec=0.01)
+                self.check_data()
+        except Exception as e:
+            print(f"ROS2 thread error: {e}")
+        finally:
+            if self.node:
+                self.node.destroy_node()
+    
+    def check_data(self):
+        """Check for new data and emit signals"""
+        if self.node and self.node.latest_image is not None:
+            self.image_received.emit(self.node.latest_image)
+            self.node.latest_image = None
+            
+        if self.node and self.node.latest_safety_state != "unknown":
+            self.safety_received.emit(self.node.latest_safety_state)
+            self.node.latest_safety_state = "unknown"
+    
+    def stop(self):
+        self.running = False
+        if self.node:
+            self.node.destroy_node()
+        self.quit()
+        self.wait()
 
 
 class IndustrialHMI(QMainWindow):
@@ -100,7 +99,7 @@ class IndustrialHMI(QMainWindow):
         self.setWindowTitle("HMI Standard - Surveillance System")
         self.setGeometry(100, 100, 1200, 800)
         
-        # Style industriel sombre
+        # Industrial dark style
         self.setStyleSheet("""
             QMainWindow {
                 background-color: #2b2b2b;
@@ -124,41 +123,41 @@ class IndustrialHMI(QMainWindow):
             }
         """)
         
-        # Variables pour les données
+        # Variables for data
         self.current_safety_state = "unknown"
         self.robot_state = "online"
         
-        # Initialiser l'interface
+        # Initialize interface
         self.init_ui()
         
-        # Initialiser les subscribers ROS2
-        self.init_ros_subscribers()
+        # Initialize ROS2 subscriber
+        self.init_ros_subscriber()
         
-        # Timer pour mettre à jour l'état du robot
+        # Timer for robot state update
         self.robot_timer = QTimer()
         self.robot_timer.timeout.connect(self.update_robot_status)
-        self.robot_timer.start(1000)  # Mise à jour toutes les secondes
+        self.robot_timer.start(1000)  # Update every second
 
     def init_ui(self):
-        """Initialiser l'interface utilisateur"""
+        """Initialize user interface"""
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
-        # Layout principal horizontal
+        # Main horizontal layout
         main_layout = QHBoxLayout(central_widget)
         main_layout.setSpacing(10)
         main_layout.setContentsMargins(10, 10, 10, 10)
         
-        # Panneau de gauche - Logs et informations
+        # Left panel - Logs and information
         left_panel = self.create_left_panel()
         main_layout.addWidget(left_panel, 1)
         
-        # Panneau de droite - Image de la caméra
+        # Right panel - Camera image
         right_panel = self.create_right_panel()
         main_layout.addWidget(right_panel, 2)
         
     def create_left_panel(self):
-        """Créer le panneau de gauche avec les logs"""
+        """Create left panel with logs"""
         panel = QFrame()
         layout = QVBoxLayout(panel)
         layout.setSpacing(10)
@@ -266,17 +265,13 @@ class IndustrialHMI(QMainWindow):
         
         return panel
         
-    def init_ros_subscribers(self):
-        """Initialize ROS2 subscribers"""
-        # Thread for images
-        self.image_thread = ImageSubscriber()
-        self.image_thread.image_received.connect(self.update_image)
-        self.image_thread.start()
-        
-        # Thread for safety state
-        self.safety_thread = SafetySubscriber()
-        self.safety_thread.safety_received.connect(self.update_safety_status)
-        self.safety_thread.start()
+    def init_ros_subscriber(self):
+        """Initialize ROS2 subscriber"""
+        # Single thread for ROS2
+        self.ros_thread = ROS2Thread()
+        self.ros_thread.image_received.connect(self.update_image)
+        self.ros_thread.safety_received.connect(self.update_safety_status)
+        self.ros_thread.start()
         
     def update_image(self, cv_image):
         """Update the displayed image"""
@@ -362,20 +357,16 @@ class IndustrialHMI(QMainWindow):
         
     def closeEvent(self, event):
         """Clean up resources on close"""
-        if hasattr(self, 'image_thread'):
-            self.image_thread.stop()
-            self.image_thread.quit()
-            self.image_thread.wait()
-            
-        if hasattr(self, 'safety_thread'):
-            self.safety_thread.stop()
-            self.safety_thread.quit()
-            self.safety_thread.wait()
+        if hasattr(self, 'ros_thread'):
+            self.ros_thread.stop()
             
         event.accept()
 
 
 def main(args=None):
+    # Initialize ROS2 once at the application level
+    rclpy.init(args=args)
+    
     app = QApplication(sys.argv)
     
     # Global style for the application
@@ -384,7 +375,10 @@ def main(args=None):
     hmi = IndustrialHMI()
     hmi.show()
     
-    sys.exit(app.exec_())
+    try:
+        sys.exit(app.exec_())
+    finally:
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
