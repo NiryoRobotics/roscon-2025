@@ -574,6 +574,67 @@ In the configuration file as in the script, PTP is not configured yet, so you wi
 
 Now you can ignore the collision object, as deterministic planners are not able to avoid collisions. But this time record a slightly higher drop position, using PTP or LIN as a pipeline you should now have a stable pick and place sequence. 
 
+Note that Pilz planners have a function called *sequences* that allows you to merge several trajectories into one, meaning you can combine PTP and LIN trajectories, to reach multiples goals without stopping. The goals are intentionally not completely reach according to a certain `bend_radius`, which allows the whole trajectory to be smoother.
+
+<img src="assets/blend_radius.png" alt="Sequences" width="50%" />
+
+As a bonus, you can imagine your trajectory to be a combination of PTP and LIN goals, optimized in function of your packaging strategy. This will prevent your robot from stopiing at each goal, if you planned to use multiple goals to reach the dropping position.
+
+To perform such a sequence, you have to initialize a new node in your launchfile, which is called `move_group`. This node is the main moveit_2 node that kind of work as an overkill core that got all the interfaces the package can provide. It was not necessary to use it before, as we interfaced the movements using `MoveitPy`, which is a python wrapper for the `moveit_cpp` interface that allows to use Moveit2 without MoveGroup. But, as we now need to use sequences, the only way to interface it is to manage with the MoveGroup node.
+
+```python
+    moveit2_config = (
+        MoveItConfigsBuilder("niryo_ned3pro", package_name="ned3pro_packaging_manager")
+        .robot_description(
+            file_path=urdf_file,
+        )
+        .joint_limits(file_path="config/joint_limits.yaml")
+        .robot_description_semantic(file_path="config/niryo_ned3pro.srdf")
+        .robot_description_kinematics(file_path="config/kinematics.yaml")
+        .trajectory_execution(file_path="config/moveit_controllers.yaml")
+        .planning_pipelines(
+            pipelines=["ompl", "chomp", "pilz_industrial_motion_planner", "stomp"]
+        )
+        .to_moveit_configs()
+    )
+
+move_group_node = Node(
+    package="moveit_ros_move_group",
+    executable="move_group",
+    output="screen",
+    parameters=[moveit2_config.to_dict()],
+    arguments=["--ros-args", "--log-level", "info"],
+)
+```
+Then, planning and executing a sequences can be done by sending a goal to the `sequence_move_group` action server.
+
+The goal of the action server is a `moveit_msgs/MotionSequenceRequest` Message, which definition can be foud there : https://docs.ros.org/en/melodic/api/moveit_msgs/html/msg/MotionSequenceRequest.html
+
+The goal constraints can be constructed by the `construct_goal_constraint` function. 
+
+```python
+
+from moveit.core.kinematic_constraints import construct_goal_constraint
+
+```
+
+And be used the same way as the `construct_joint_constraint` function, already in your code. 
+
+The link where the pose need to be attached is `tool_link`
+
+Remember that we send an action using the `send_goal_async` method of the action client.
+
+```python
+send_future = self.send_goal_async(goal)
+rclpy.spin_until_future_complete(self._node, send_future)
+goal_handle = send_future.result()
+if not goal_handle.accepted:
+    self._node.get_logger().error("command rejected")
+    return
+```
+
+
+
 ### Comments from the integration team 
 
 The integration team think that we cannot call this implementation a "packaging line" as it just drops the vials into the box, without any organization. 

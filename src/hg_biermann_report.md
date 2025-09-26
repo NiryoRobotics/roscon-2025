@@ -283,10 +283,16 @@ When the second pick and place is performed, we return to the `grip` position to
 
 ### Raspberry side
 
-The client had some requirements about performances. That's why they asked us to create an interactive interface that can display the internal state of the whole system. As I wanted my client to have the best experience possible, that is to say : a performative, free to use and lightweight, python based HCI. Hence, I obviously typed into google, "Best HCI python 2025 free download no virus" and found this gem : 
+The client had some requirements about performances. That's why they asked us to create an interactive interface that can display the internal state of the whole system. As I wanted my client to have the best experience possible, that is to say : a performative, free to use and lightweight, python based HCI. Hence, I obviously typed into google, "Best HCI python 2025 free download no virus no toolbars" and found this gem : 
+
+`hmi_standard.py`
+
+This HMI uses PyQt5, a python library for creating GUI applications. It is also compatible with ROS2 and subscribes by default to the `quality_check/safety_state` topic and the `rpi_manager/frame` topic, which is supposed to be the image taken by the camera.
+
 
 It displays : The overall state of the system, the image taken by the camera, the latest safety state detected, the numbers of objects taken in charge today and the proportionality of them being unsafe. It also calculates the average time to perform a pick and place operation.
 
+The website stated all these functionalities, but I think I only downloaded the demo version, as some of the functionalities were not available.
 
 Another function of the Raspberry pi was to perform the quality check itself. To perform that, we have a testing zone where a vial is placed by the QC robot. I was given a pre-trained YOLO v8 model to detect the safety state of the vial. The model is trained to detect the safety state of the vial, meaning that it can detect if the vial is safe or unsafe. I was also given this link : https://universe.roboflow.com/louloups-sign/safety_check-zdmjr/browse?queryText=&pageSize=50&startingIndex=0&browseQuery=true which shows the dataset on which the model was trained.
 
@@ -331,6 +337,23 @@ Inside the timer callback, the logic should be simple. We can use the camera to 
     ret, frame = self.cap.read()
 ```
 `ret` is a boolean value that is `True` if the image is successfully captured, `False` otherwise. `frame` is the image captured by the camera.
+
+At this time I remembered I have to publish the image to the `rpi_manager/frame` topic, so that the HMI can display it. I used the `cv_bridge` library to convert the image to a `sensor_msgs/Image` message.
+
+```python
+    from cv_bridge import CvBridge
+    from sensor_msgs.msg import Image
+```
+
+```python
+    self.bridge = CvBridge()
+    self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 1)
+```
+
+```python
+    image_msg = self.bridge.cv2_to_imgmsg(frame, "bgr8")
+    self.image_publisher.publish(image_msg)
+```
 
 I know that inference run on a CPU is not the best idea, as it can be very slow. I had an idea which was to process the image before sending to the model, so that it can be more lightweight, while fitting the model's dataset. A human brain has around 10 Billion neurons, while ChatGPT has around 175 Billion neurons. So I decided to prompt chat gpt to adress the most optmized filters to apply to the image to fit the model's dataset while being as performative as possible. 
 
@@ -544,6 +567,10 @@ def _on_result_response(self, future):
 Note that the callbacks should communicate their state to the main thread, using a shared variable to prevent the execution of multiple actions at the same time, now that the response is recieved in a different thread.
 
 
+
+### Logs
+
+The HMI is supposed to display logs to the user, the demo version you downloaded ask you to implement new publishers and subscribers to implement new logs such as cadency, time to perform a trajectory, etc.
 
 
 ## Bonus

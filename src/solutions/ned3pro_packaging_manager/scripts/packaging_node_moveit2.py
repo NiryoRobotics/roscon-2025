@@ -150,70 +150,7 @@ class PickAndPlaceExecutorMoveIt2:
 
         raise ValueError("Unsupported pose format. Provide PoseStamped, dict{x,y,z,qx,qy,qz,qw}, or [x,y,z,qx,qy,qz,qw].")
 
-    def go_to_joints(self, joints: list[float]) -> bool:
-        """Move to joint positions using RobotState - following official example pattern"""
-        try:
-            # instantiate a RobotState instance using the current robot model
-            robot_model = self._moveit.get_robot_model()
-            robot_state = RobotState(robot_model)
-            
-            # Set joint positions for NED3 Pro (6 joints)
-            joint_names = [f"joint_{i+1}" for i in range(6)]  # joint_1 to joint_6 for NED3 Pro
-            joint_values = dict(zip(joint_names, joints))
-            robot_state.joint_positions = joint_values
-            
-            # set plan start state to current state
-            self._arm.set_start_state_to_current_state()
-            
-            # set goal state to the initialized robot state
-            self._logger.info("Set goal state to joint positions")
-            self._arm.set_goal_state(robot_state=robot_state)
-            
-            # plan to goal
-            return self.plan_and_execute(sleep_time=0.0)
-                
-        except Exception as e:
-            self._logger.error(f"Error in go_to_joints: {e}")
-            return False
 
-    def go_to_pose(self, pose: PoseStamped, pose_link: str = "tool_link") -> bool:
-        """Move to pose using PoseStamped message - following official example pattern"""
-        try:
-            # set plan start state to current state
-            self._arm.set_start_state_to_current_state()
-            
-            # set pose goal with PoseStamped message
-            self._arm.set_goal_state(pose_stamped_msg=pose, pose_link=pose_link)
-            
-            # plan to goal
-            return self.plan_and_execute(sleep_time=0.0)
-                
-        except Exception as e:
-            self._logger.error(f"Error in go_to_pose: {e}")
-            return False
-
-    def move_to_target_pose(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, 
-                           qx: float = 0.0, qy: float = 0.0, qz: float = 0.0, qw: float = 1.0) -> bool:
-        """Move to target pose with given position and orientation"""
-        pose = PoseStamped()
-        pose.header.frame_id = "base_link"  # Base frame for NED3 Pro
-        pose.header.stamp = self._node.get_clock().now().to_msg()
-        pose.pose.position.x = x
-        pose.pose.position.y = y
-        pose.pose.position.z = z
-        pose.pose.orientation.x = qx
-        pose.pose.orientation.y = qy
-        pose.pose.orientation.z = qz
-        pose.pose.orientation.w = qw
-        
-        self._logger.info(f"Moving to pose: position=({x}, {y}, {z}), orientation=({qx}, {qy}, {qz}, {qw})")
-        
-        return self.go_to_pose(pose)
-
-    def move_to_joint_positions(self, joints: list[float]) -> bool:
-        """Move to specific joint positions [0,0,0,0,0,0] - main function for packaging"""
-        self._logger.info(f"Moving to joint positions: {joints}")
-        return self.go_to_joints(joints)
 
     def use_single_pipeline_planning(self, target=None, pipeline_name: str = "ompl_rrtc", pose_link: str = "tool_link") -> bool:
         """Single-pipeline planning using either joints or Cartesian pose.

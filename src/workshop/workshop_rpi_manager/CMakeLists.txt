@@ -11,6 +11,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
   install(
     PROGRAMS
       scripts/detection.py
+      scripts/hmi_standard.py
     DESTINATION lib/${PROJECT_NAME}
   )
 endif()
