@@ -29,7 +29,7 @@ class ROS2Node(Node):
             Image,
             '/rpi_manager/frame',
             self.image_callback,
-            10
+            1
         )
         
         self.safety_subscription = self.create_subscription(

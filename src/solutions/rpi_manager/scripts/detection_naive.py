@@ -43,7 +43,7 @@ class DetectionNaiveNode(Node):
         self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 10)
         
         # Create image publisher
-        self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 10)
+        self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 1)
         
         self.timer_ = self.create_timer(5.0, self._on_timer)
 

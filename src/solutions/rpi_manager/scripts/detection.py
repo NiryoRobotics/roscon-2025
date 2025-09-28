@@ -41,7 +41,7 @@ class DetectionNode(Node):
         self._srv = self.create_service(GetSafety, 'get_safety', self._on_get_safety)
         
         # Create image publisher
-        self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 10)
+        self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 1)
 
     def _apply_color_filters(self, frame):
         """Apply color filters to the image"""
