@@ -6,6 +6,7 @@ import numpy as np
 from ultralytics import YOLO
 import os
 from sensor_msgs.msg import Image
+from std_msgs.msg import String
 from cv_bridge import CvBridge
 
 from rpi_manager.srv import GetSafety
@@ -42,6 +43,9 @@ class DetectionNode(Node):
         
         # Create image publisher
         self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 1)
+        
+        # Create safety state publisher
+        self.safety_publisher = self.create_publisher(String, '/quality_check/safety_state', 1)
 
     def _apply_color_filters(self, frame):
         """Apply color filters to the image"""
@@ -129,6 +133,14 @@ class DetectionNode(Node):
             
             # Get the safety prediction
             safety_state = self._get_safety_prediction(filtered_image)
+            
+            # Publish safety state
+            try:
+                safety_msg = String()
+                safety_msg.data = safety_state
+                self.safety_publisher.publish(safety_msg)
+            except Exception as e:
+                self.get_logger().warn(f"Failed to publish safety state: {e}")
             
             self.get_logger().info(f"Safety state detected: {safety_state}")
             response.state = safety_state

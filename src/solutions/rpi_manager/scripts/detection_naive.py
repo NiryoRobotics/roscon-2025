@@ -40,7 +40,7 @@ class DetectionNaiveNode(Node):
             self.get_logger().info("Camera initialised successfully")
         
         # Create publisher for topic
-        self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 10)
+        self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 1)
         
         # Create image publisher
         self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 1)

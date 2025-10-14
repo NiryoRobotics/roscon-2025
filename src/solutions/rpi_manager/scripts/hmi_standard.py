@@ -36,7 +36,7 @@ class ROS2Node(Node):
             String,
             '/quality_check/safety_state',
             self.safety_callback,
-            10
+            1
         )
         
         self.get_logger().info('HMI ROS2 node initialized')

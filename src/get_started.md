@@ -102,6 +102,8 @@ Set up the ROS 2 driver configuration:
 nano ~/ros2_drivers_ws/src/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
 ```
 
+Never forget to source `ros2_drivers_ws` and `roscon_ws` before running the code.
+
 - Do not add a namespace.
 - Add your robot IP here (QC robot for Computer 1, or Packaging robot for Computer 2).
 - Find your robot IP by connecting via SSH:

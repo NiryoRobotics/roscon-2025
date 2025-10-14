@@ -3,14 +3,14 @@
 ## Introduction
 During my internship in Basel, I was tasked with integrating a Niryo Ned3 Pro robot into a quality check line. The main goal was to sort chemical products in vials between safe and unsafe categories (classified according to their color) and place the safe ones in a packaging line, which will be created by a french fellow that worked with me on the global project.
 
-The robot was equipped with a conveyor belt with an IR sensor to detect the presence of a vial. The robot was also equipped with a  customized gripper to pick and place the vials. To check the safety of each vial, we created a testing zone composed by a standard camera and a plate. The camera is pluged to a Raspberry Pi where the safety testing is proceed. The camera view is displayed to a screen with some logs via an HDMI cable. 
+The robot was equipped with a conveyor belt with an IR sensor to detect the presence of a vial. The robot was also equipped with a  customized gripper to pick and place the vials. To check the safety of each vial, we created a testing zone composed by a standard camera and a plate. The camera is plugged to a Raspberry Pi where the safety testing is proceeded. The camera view is displayed to a screen with some logs via an HDMI cable. 
 
 To perform that I will propose two ROS2 packages, that will handle both robot's and raspberry's tasks. 
     
 ## My Solution
 
 ### Robot side
-On the robot side we provide a ROS2 package that handles the robot's task, starting with a pick and place action when an object is detected by the IR sensor, from the conveyor belt to the testing zone. Once the safety state of the vial is recieved fom the raspberry, the robot will move to the packaging line to place the vial if it's safe, or to the reject zone if it's unsafe.
+On the robot side we provide a ROS2 package that handles the robot's task, starting with a pick and place action when an object is detected by the IR sensor, from the conveyor belt to the testing zone. Once the safety state of the vial is received fom the raspberry, the robot will move to the packaging line to place the vial if it's safe, or to the reject zone if it's unsafe.
 
 For the realization of this pakcage I propose the following architecture :
 
@@ -55,7 +55,7 @@ The niryo conveyor belt has an ID of 9 by default. The id is nevertheless set as
 
 The speed parameter describes the percentage of the conveyor belt max speed. I decided to set it by 60% by default because after some tests, I found that higher speeds were not stable enough for the robot to pick and place the vials.
 
-The `sensor_index` parameter is used to get the index of the digital input that is used to detect the presence of a vial. I decided to set it to 4 by default because the IR sensor is the fourth digital input of the robot by default. Neverthless, it is set as a parameter to be able to use another sensor if needed in a future implementation.
+The `sensor_index` parameter is used to get the index of the digital input that is used to detect the presence of a vial. I decided to set it to 4 by default because the IR sensor is the fourth digital input of the robot by default. Nevertheless, it is set as a parameter to be able to use another sensor if needed in a future implementation.
 
 The topic, services and actions names are also set as parameters in order to be able to change it if the niryo's API changes in the future. The default values are the ones used in the Niryo Ned3 Pro robot as today. 
 
@@ -86,7 +86,7 @@ self.conveyor = ConveyorController(self, self.conveyor_service, self.conveyor_id
 tool_cfg = {"id": self.tool_id, "max": self.max_torque_percentage, "hold": self.hold_torque_percentage}
 self.pick_place = PickAndPlaceExecutor(self, self.robot_action, self.tool_action, poses, tool_cfg)
 ```
-We finally subscribe to the digital state topic and the safety state topic, as well as creating 2 variables to store the last object detected and the last safety state recieved from the raspberry.
+We finally subscribe to the digital state topic and the safety state topic, as well as creating 2 variables to store the last object detected and the last safety state received from the raspberry.
 
 ```python
 # --- State ---
@@ -261,7 +261,7 @@ flowchart TD
 ```
 The `run_loop` method is the one called by the main function, every time it is called we make the node spin once, in order to execute all the actions previously stated. 
 
-We begin by verifying if an object has been detected by the IR sensor, in this case we sant to ensure that the conveyor is running. We then ant to return to the begining of the loop to wait for the next object, this can be perform in python by using a `continue` statement.
+We begin by verifying if an object has been detected by the IR sensor, in this case we want to ensure that the conveyor is running. We then want to return to the begining of the loop to wait for the next object, this can be performed in python by using a `continue` statement.
 
 If an object is detected, we call our `set_running` method from the conveyor controller to stop the conveyor belt. 
 
@@ -271,9 +271,9 @@ I am a very precautionnary person, so I used all my mind to engineer the safest 
 
 For the first phase, I took 4 positions to perform the pick and place. The first one is the `grip` position where the robot hand is opened and ready to recieve a vial. Then I want the robot to close the gripper and slowly move in a vertical line to raise the vial to an upper position called `high1`. Then, the robot turns to its left to the `high2` position making a circle trajectory until the vial is just above the test zone. And then we perform a vertical straight line to the `low1` position where the robot opens the gripper and slowly moves back to the `high2` position to safely leave the camera field of view.
 
-When the safety response is recieved, we go back to the `low1` position, grab the vial and move to the `safe` or `unsafe` position depending on the safety state passing by the `high2` position to ensure maximum safety. 
+When the safety response is received, we go back to the `low1` position, grab the vial and move to the `safe` or `unsafe` position depending on the safety state passing by the `high2` position to ensure maximum safety. 
 
-When the second pick and place is performed, we return to the `grip` position to wait for the next object, obvioulsy passing back by the `high2` and `high1` positions to ensure maximum safety, as we want the robot to arrive in a straight line to the conveyor belt before setting it back to run and reseting the `last_object_detected` variable because **safety first**, we never know !
+When the second pick and place is performed, we return to the `grip` position to wait for the next object, obviously passing back by the `high2` and `high1` positions to ensure maximum safety, as we want the robot to arrive in a straight line to the conveyor belt before setting it back to run and reseting the `last_object_detected` variable because **safety first**, we never know !
 
 **For now, follow the instructions given by Hans-Günther to complete the missing run loop. Fill the poses.yaml file with the positions you took. You can create some methods on the pick and place executor to perform the two phases and make the code more readable.**
 
@@ -355,7 +355,7 @@ At this time I remembered I have to publish the image to the `rpi_manager/frame`
     self.image_publisher.publish(image_msg)
 ```
 
-I know that inference run on a CPU is not the best idea, as it can be very slow. I had an idea which was to process the image before sending to the model, so that it can be more lightweight, while fitting the model's dataset. A human brain has around 10 Billion neurons, while ChatGPT has around 175 Billion neurons. So I decided to prompt chat gpt to adress the most optmized filters to apply to the image to fit the model's dataset while being as performative as possible. 
+I know that inference run on a CPU is not the best idea, as it can be very slow. I had an idea which was to process the image before sending to the model, so that it can be more lightweight, while fitting the model's dataset. A human brain has around 10 Billion neurons, while ChatGPT has around 175 Billion neurons. So I decided to prompt ChatGPT to adress the most optmized filters to apply to the image to fit the model's dataset while being as performative as possible. 
 
 This is the prompt I used : 
 
@@ -454,7 +454,7 @@ Here are some feedbacks to improve the code :
 
 ### Quality Check Logic
 
-The main problem of your implementation concerns the logic of the quality check. Firstly because the parameters you applied to the camera are not correct and leads the model to have a bad interpretation of the safety state. Indeed the image you checked on the screen was not the one the modifications were applied to. Please review this image and apply the correct parameters to the camera refering to the images the AI model was trained with. Optimizing the image to speed up the inference time a good idea thought.
+The main problem of your implementation concerns the logic of the quality check. Firstly because the parameters you applied to the camera are not correct and leads the model to have a bad interpretation of the safety state. Indeed the image you checked on the screen was not the one the modifications were applied to. Please review this image and apply the correct parameters to the camera refering to the images the AI model was trained with. Optimizing the image to speed up the inference time is a good idea thought.
 
 Secondly, you decided to publish the safety state on a topic every 5 seconds. Because that's the median time to perform a trajectory in your operation. This is not a good idea because what if the image is not taken at the right time ? Imagine a case where the image is taken without a vial, the last safety state would be randomly chosen.
 
@@ -564,7 +564,7 @@ def _on_result_response(self, future):
 
 
 
-Note that the callbacks should communicate their state to the main thread, using a shared variable to prevent the execution of multiple actions at the same time, now that the response is recieved in a different thread.
+Note that the callbacks should communicate their state to the main thread, using a shared variable to prevent the execution of multiple actions at the same time, now that the response is received in a different thread.
 
 
 

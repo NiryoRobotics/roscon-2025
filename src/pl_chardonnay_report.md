@@ -1,9 +1,9 @@
 # Paul-Louis Chardonnay's Report
 
 ## Introduction
-Answering to all job application in Switzerland I saw on LinkedIn during 6 month, I finally encounted a company that was looking for a robot integrator. I applied and was accepted for an internship in Basel, Switzerland. This company sells chemical products to pharmacies all over the world, a stunning industry that I won't miss to add to my resume. During my internship I was asked to integrate a Niryo Ned3 Pro robot into a packaging line in order to pack the chemical products into boxes, finlazing the whole production process whose begining has been automated by my fellow intern Hans-Gunther. My internship is also a partnership with the Niryo company itself, as they will be in charge of sending the hardware and providing feedback to my implementation, before all I wanted to thanks them for this opportunity.
+Answering to all job application in Switzerland I saw on LinkedIn during 6 month, I finally encounted a company that was looking for a robot integrator. I applied and was accepted for an internship in Basel, Switzerland. This company sells chemical products to pharmacies all over the world, a stunning industry that I won't miss to add to my resume. During my internship I was asked to integrate a Niryo Ned3 Pro robot into a packaging line in order to pack the chemical products into boxes, finalzing the whole production process whose begining has been automated by my fellow intern Hans-Gunther. My internship is also a partnership with the Niryo company itself, as they will be in charge of sending the hardware and providing feedback to my implementation, before all I wanted to thanks them for this opportunity.
 
-The goal of the integration is simple : a vial is detected by an IR sensor on a conveyor belt, the robot is asked to picj it up and place it in a box in order to be packed and sent to the warehouse. 
+The goal of the integration is simple : a vial is detected by an IR sensor on a conveyor belt, the robot is asked to pick it up and place it in a box in order to be packed and sent to the warehouse. 
 
 To perform that I will propose a ROS2 package that will handle the robot's task. 
 
@@ -145,7 +145,7 @@ rclpy.spin_until_future_complete(self._node, future)
 ```
 
 ### Hans-Günther's Pick and Place Executor
-Following the hans-gunther's instructions, I decided to use the same implementation as him, as I wanted to be consistent with his work while I kenw i would have to rework this class. 
+Following the hans-gunther's instructions, I decided to use the same implementation as him, as I wanted to be consistent with his work while I knew i would have to rework this class. 
 
 The pick and place executor is responsible for controlling the robot's task.
 
@@ -165,9 +165,9 @@ The pick and place executor is responsible for controlling the robot's task.
 
 ```
 
-As I wanted to be consistent with his work while using other framework to control the robot, I only pasted his work conerning the gripper action client. We thus declare here the configuration for the Tool. As said before, I prefered to use fix configurations for the tool as we will only use Niryo's components. 
+As I wanted to be consistent with his work while using other framework to control the robot, I only pasted his work concerning the gripper action client. We thus declare here the configuration for the Tool. As said before, I prefered to use fix configurations for the tool as we will only use Niryo's components. 
 
-The only methode I kept from his implementation is the `_tool_cmd` method, which is used to send a goal to the tool action server. 
+The only method I kept from his implementation is the `_tool_cmd` method, which is used to send a goal to the tool action server. 
 
 ```python
 # Gripper
@@ -203,6 +203,8 @@ To set a goal to an action we use the `send_goal_async` method of the action cli
 ```
 
 With this base, we have everything to perform our application. I will now describe the path I followed to implement my solution. 
+
+Note that this could be a good idea to create `_open_gripper` and `_close_gripper` methods to make the code more readable.
 
 
 ### My MoveIt2 implementation
@@ -510,7 +512,7 @@ ros2 service call /niryo_robot/conveyor/ping_and_set_conveyor niryo_ned_ros2_int
 
 This internship was a great experience, I learnt a lot and I had the opportunity to work with a great team. I want to thank my fellow intern Hans-Gunther for his help and his guidance, and Niryo for this opportunity. 
 
-At the end we have a fully functional packaging line able pick the vials from the conveyor and place them in the box. 
+At the end we have a fully functional packaging line able to pick the vials from the conveyor and place them in the box. 
 
 Using Moveit2 was a great choice as I got faster trajectories than the other intern. 
 
@@ -560,13 +562,13 @@ First of all, set Velocity and Acceleraition scaling factors to 1.0, to get the 
 
 Then In the context window, The OMPL RRT Planner should be selected by default. Go on the Joints section and set the Joints Values to pure zeros. Click on plan and execute. You should see that the planner create a path for the robot to follow and reach its goal. Now set the goal state at the previous state and perform the trajectories again and again. You should see that the path can slightly vary each time. And will vary even more on long trajectories or path that include obstacles. 
 
-Now on the context window, select the PLIZ PTP planner. Click on plan and execute, and repeat the same procedure. You should see that the path is the same each time. 
+Now on the context window, select the PILZ PTP planner. Click on plan and execute, and repeat the same procedure. You should see that the path is the same each time. 
 
-Now test the PLIZ LIN planner. For this planner you might have to lower the acceleration and velocity scaling factors to 0.5, as linear trajectories are faster and can surpass the limits of the robot. You will notice that this planner allows you to keep your gripper in a straight line during the whole trajectory, which could be useful to ensure safety. 
+Now test the PILZ LIN planner. For this planner you might have to lower the acceleration and velocity scaling factors to 0.5, as linear trajectories are faster and can surpass the limits of the robot. You will notice that this planner allows you to keep your gripper in a straight line during the whole trajectory, which could be useful to ensure safety. 
 
 **Second mission, try all these planners and report the results.** 
 
-Note that Both PLIZ LIN and PTP are deterministic planners, meaning that the path will be the same each time we plan a trajectory. 
+Note that Both PILZ LIN and PTP are deterministic planners, meaning that the path will be the same each time we plan a trajectory. 
 
 In the configuration file as in the script, PTP is not configured yet, so you will have to implement it.
 
@@ -578,7 +580,7 @@ Note that Pilz planners have a function called *sequences* that allows you to me
 
 <img src="assets/blend_radius.png" alt="Sequences" width="50%" />
 
-As a bonus, you can imagine your trajectory to be a combination of PTP and LIN goals, optimized in function of your packaging strategy. This will prevent your robot from stopiing at each goal, if you planned to use multiple goals to reach the dropping position.
+As a bonus, you can imagine your trajectory to be a combination of PTP and LIN goals, optimized in function of your packaging strategy. This will prevent your robot from stopping at each goal, if you planned to use multiple goals to reach the dropping position.
 
 To perform such a sequence, you have to initialize a new node in your launchfile, which is called `move_group`. This node is the main moveit_2 node that kind of work as an overkill core that got all the interfaces the package can provide. It was not necessary to use it before, as we interfaced the movements using `MoveitPy`, which is a python wrapper for the `moveit_cpp` interface that allows to use Moveit2 without MoveGroup. But, as we now need to use sequences, the only way to interface it is to manage with the MoveGroup node.
 
