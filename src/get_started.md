@@ -118,6 +118,7 @@ Copy the IP of the Ethernet interface, then save `drivers_list.yaml`.
 Build both workspaces and source their setups:
 
 ```bash
+source /opt/ros/jazzy/setup.bash 
 cd ~/ros2_drivers_ws
 colcon build
 source install/setup.bash
