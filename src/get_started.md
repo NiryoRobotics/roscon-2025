@@ -129,6 +129,10 @@ source install/setup.bash
 
 Tip: add the `source` lines to your `~/.bashrc` so you don’t have to source them in every new terminal.
 
+Run the ros2 driver to enable communication with the robots : 
+```bash
+ros2 launch niryo_ned_ros2_driver driver.launch.py
+```
 
 ## Context
 
