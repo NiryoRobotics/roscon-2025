@@ -432,32 +432,32 @@ Then I used the `use_single_pipeline_planning` method to plan and execute the tr
 ```python
 def _execute_pick_sequence(self):
     try:
-    grip_pose = self.poses.get('grip')
-    success = self.pick_place.use_single_pipeline_planning(grip_pose, "ompl_rrtc")
-    if not success:
-        self.get_logger().error("Failed to reach grip position")
-        return False
+        grip_pose = self.poses.get('grip')
+        success = self.pick_place.use_single_pipeline_planning(grip_pose, "ompl_rrtc")
+        if not success:
+            self.get_logger().error("Failed to reach grip position")
+            return False
 
+        gripper_success = self.pick_place.close_gripper()
+        if not gripper_success:
+            self.get_logger().error("Failed to close gripper")
+            return False
 
-            
-    gripper_success = self.pick_place.close_gripper()
-    if not gripper_success:
-        self.get_logger().error("Failed to close gripper")
-        return False
+        home_pose = self.poses.get('place')
+        success2 = self.pick_place.use_single_pipeline_planning(home_pose, "ompl_rrtc")
+        if not success2:
+            self.get_logger().error("Failed to reach home position")
+            return False
 
-    home_pose = self.poses.get('place')
-    success2 = self.pick_place.use_single_pipeline_planning(home_pose, "ompl_rrtc")
-    if not success2:
-        self.get_logger().error("Failed to reach home position")
-        return False
-    gripper_success2 = self.pick_place.open_gripper()
-    if not gripper_success2:
-        self.get_logger().error("Failed to open gripper")
-        return False
-    success3 = self.pick_place.use_single_pipeline_planning(grip_pose, "ompl_rrtc")
-    if not success3:
-        self.get_logger().error("Failed to reach grip position")
-        return False
+        gripper_success2 = self.pick_place.open_gripper()
+        if not gripper_success2:
+            self.get_logger().error("Failed to open gripper")
+            return False
+
+        success3 = self.pick_place.use_single_pipeline_planning(grip_pose, "ompl_rrtc")
+        if not success3:
+            self.get_logger().error("Failed to reach grip position")
+            return False
                         
     return True
             
