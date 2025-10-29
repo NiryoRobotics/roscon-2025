@@ -19,8 +19,8 @@ install(FILES .setup_assistant DESTINATION share/${PROJECT_NAME})
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
   install(
     PROGRAMS
-      scripts/packaging_node_moveit2.py
-      scripts/packaging_node_full.py
+      scripts/packaging_node.py
+      scripts/packaging_node_naive.py
     DESTINATION lib/${PROJECT_NAME}
   )
 endif()

@@ -77,9 +77,9 @@ def generate_launch_description():
 
     # MoveIt2 Python node
     packaging_moveit2_node = Node(
-        name="packaging_node_moveit2",
+        name="packaging_node",
         package="ned3pro_packaging_manager",
-        executable="packaging_node_full.py",
+        executable="packaging_node.py",
         output="both",
         parameters=[
             moveit_config.to_dict(),
