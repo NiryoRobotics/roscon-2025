@@ -165,6 +165,8 @@ He will be in charge of the Packaging line integration, as he has "already" work
 
 Gameplay : Paul-Louis implemented a lazy solution that is not very deep. He just did the bare minimum to pass the internship. Nevertheless, the feedback will be performed by the Niryo Team, it will thus be more guided than a professor would, and it is also more industry oriented. This character is perfect for persons who want to discover how ROS2 tools can be used to perform a real industrial integration, and know more about trajectories and industrial planning.
 
+Click [here](src/workshop/workshop_packaging_manager/pl_chardonnay_report.md) to read his report.
+
 ### Hans-Günther Biermann
 
 
@@ -180,6 +182,8 @@ Personality :
 He will be in charge of the Quality Check line integration, as he has strong background in computer vision.
 
 Gameplay : Hans-Günther implemented a deep solution that is over-engineered for the task, leading to a unefficient solution with a complex architecture. The feedback will be performed by a university professor that does not have engough time to provide a guided feedback leading to a perfect solution. This character is perfect for persons who want to learn how to design and lead a complex integration project, based on ROS2 and that uses principles of good Python programming, such as encapsulation, multi-threading... It also talks about AI integration in an industrial context.
+
+Click [here](src/workshop/workshop_quality_check_manager/hg_biermann_report.md) to read his report.
 
 For the following parts of the workshop, we will devide your team in two groups : Those who will read and follow the work of Paul-Louis, and the others who will read and follow the work of Hans-Günther. 
 
