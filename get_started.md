@@ -37,7 +37,7 @@ Connectivity checklist:
 
 Network layout overview:
 
-![Workshop network layout](assets/network_layout.svg)
+![Workshop network layout](src/assets/network_layout.svg)
 
 ## Software setup
 
@@ -151,7 +151,7 @@ Here are the profiles of both students :
 
 ### Paul-Louis Chardonnay
 
-<img src="assets/plchar.png" alt="Paul-Louis Chardonnay" width="15%" />
+
 
 Education : Final year of Master's degree in Mechatronics Engineering at the University of Lille
 
@@ -167,7 +167,7 @@ Gameplay : Paul-Louis implemented a lazy solution that is not very deep. He just
 
 ### Hans-Günther Biermann
 
-<img src="assets/hansgunther.png" alt="Hans-Günther Biermann" width="15%" />
+
 
 Education : Bachelor's degree in Computer Science at the University of Stuttgart
 
