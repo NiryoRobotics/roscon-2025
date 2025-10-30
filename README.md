@@ -93,19 +93,32 @@ echo "export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" >> ~/.bashrc
 ```
 
 **Important - ROS Domain Configuration**: 
-During the workshop, you'll need to communicate with external devices (Raspberry Pi) for specific tasks. To enable this while maintaining network isolation:
+During the workshop, multiple robot cells will be operating on the same network. To communicate with your assigned hardware (robot, Raspberry Pi, etc.) while staying isolated from other teams, you need to configure your ROS Domain ID.
 
-- **For Quality Check (Hans-Günther's part)**: Set `ROS_DOMAIN_ID=11` to communicate with the Raspberry Pi
-- **For Packaging (Paul-Louis's part)**: Set `ROS_DOMAIN_ID=22` for the packaging system
+**Each hardware cell has a specific ROS_DOMAIN_ID** that will be indicated on the robot or Raspberry Pi at your workstation.
 
-Add this to your `~/.bashrc`:
+Edit your `~/.bashrc` file (located at `~/.bashrc` locally or `/root/.bashrc` in the devcontainer):
+
 ```bash
-# Uncomment the domain ID you need for your current task
-# export ROS_DOMAIN_ID=11  # For quality check part
-# export ROS_DOMAIN_ID=22  # For packaging part
+# Change LOCALHOST to SUBNET to discover devices on the local network
+export ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET
+
+# Set the ROS_DOMAIN_ID provided for your hardware/cell
+export ROS_DOMAIN_ID=XX  # Replace XX with the domain ID written on your robot/Raspberry Pi
 ```
 
-**Note**: Remember to source your bashrc (`source ~/.bashrc`) or open a new terminal after changing the ROS_DOMAIN_ID!
+**Configuration steps**:
+1. **Find your domain ID**: Check the label on your robot or Raspberry Pi for the assigned `ROS_DOMAIN_ID`
+2. **Change discovery range**: Set `ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET` in your `~/.bashrc`
+3. **Set your domain ID**: Add `export ROS_DOMAIN_ID=XX` (replace XX with your assigned number)
+4. **Apply changes**: Run `source ~/.bashrc` or open a new terminal
+
+**Why this works**: 
+- `SUBNET` allows discovery of ROS 2 nodes across the local network (needed to find robots and Raspberry Pi devices)
+- `ROS_DOMAIN_ID` provides isolation by ensuring you only communicate with devices in your assigned domain
+- This allows multiple teams to work simultaneously without interference
+
+**Note**: If you switch between different parts of the workshop (quality check vs packaging) or move to a different robot cell, remember to update the `ROS_DOMAIN_ID` and source your bashrc again!
 
 ### Common steps (Local and Docker)
 

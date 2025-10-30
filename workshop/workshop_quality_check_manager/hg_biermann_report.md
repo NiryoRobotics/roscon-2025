@@ -9,22 +9,28 @@ To perform that I will propose two ROS2 packages, that will handle both robot's 
 
 ## Network Configuration - IMPORTANT!
 
-**Before starting this part of the workshop**, you need to configure your ROS 2 network settings to communicate with the Raspberry Pi that handles the quality check vision system.
+**Before starting this part of the workshop**, you need to configure your ROS 2 network settings to communicate with your assigned quality check cell and its Raspberry Pi.
 
-The quality check system uses **ROS_DOMAIN_ID=11** to communicate with the Raspberry Pi.
+**Check the ROS_DOMAIN_ID** written on your Raspberry Pi or workstation label - this is the domain ID assigned to your quality check cell.
 
-Edit your `~/.bashrc` file and uncomment/set the quality check domain ID:
+Edit your `~/.bashrc` file (located at `~/.bashrc` locally or `/root/.bashrc` in the devcontainer):
 
-```bash
-export ROS_DOMAIN_ID=11  # For quality check part
-```
+1. **Change the discovery range** from LOCALHOST to SUBNET:
+   ```bash
+   export ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET
+   ```
 
-Then source your bashrc or open a new terminal:
-```bash
-source ~/.bashrc
-```
+2. **Set your assigned domain ID** (replace XX with the number from your Raspberry Pi/workstation):
+   ```bash
+   export ROS_DOMAIN_ID=XX  # Use the domain ID written on your Raspberry Pi
+   ```
 
-This allows your system to communicate with the Raspberry Pi's vision system while staying isolated from other ROS 2 systems on the network.
+3. **Apply changes** by sourcing your bashrc or opening a new terminal:
+   ```bash
+   source ~/.bashrc
+   ```
+
+**Why SUBNET?** This allows ROS 2 to discover nodes across your local network (including the Raspberry Pi on a different machine), while your assigned `ROS_DOMAIN_ID` ensures you only communicate with your quality check cell and don't interfere with other teams.
     
 ## My Solution
 

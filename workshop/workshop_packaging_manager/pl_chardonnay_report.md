@@ -9,22 +9,28 @@ To perform that I will propose a ROS2 package that will handle the robot's task.
 
 ## Network Configuration - IMPORTANT!
 
-**Before starting this part of the workshop**, you need to configure your ROS 2 network settings to communicate with the packaging system.
+**Before starting this part of the workshop**, you need to configure your ROS 2 network settings to communicate with your assigned packaging cell.
 
-The packaging line uses **ROS_DOMAIN_ID=22** to isolate its network communication.
+**Check the ROS_DOMAIN_ID** written on your robot or workstation label - this is the domain ID assigned to your packaging cell.
 
-Edit your `~/.bashrc` file and uncomment/set the packaging domain ID:
+Edit your `~/.bashrc` file (located at `~/.bashrc` locally or `/root/.bashrc` in the devcontainer):
 
-```bash
-export ROS_DOMAIN_ID=22  # For packaging part
-```
+1. **Change the discovery range** from LOCALHOST to SUBNET:
+   ```bash
+   export ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET
+   ```
 
-Then source your bashrc or open a new terminal:
-```bash
-source ~/.bashrc
-```
+2. **Set your assigned domain ID** (replace XX with the number from your robot/workstation):
+   ```bash
+   export ROS_DOMAIN_ID=XX  # Use the domain ID written on your packaging robot
+   ```
 
-This allows your system to communicate with the packaging robot while staying isolated from other ROS 2 systems on the network.
+3. **Apply changes** by sourcing your bashrc or opening a new terminal:
+   ```bash
+   source ~/.bashrc
+   ```
+
+**Why SUBNET?** This allows ROS 2 to discover nodes across your local network (not just on your machine), while your assigned `ROS_DOMAIN_ID` ensures you only communicate with your packaging cell and don't interfere with other teams.
 
 ## My Solution
 
