@@ -31,7 +31,7 @@ Connectivity checklist:
 
 
 **Setup overview:**
-![Workshop setup](src/assets/factory_cell_schematic.png)
+![Workshop setup](assets/factory_cell_schematic.png)
 
 ## Software setup
 
