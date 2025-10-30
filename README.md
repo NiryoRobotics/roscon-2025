@@ -131,6 +131,12 @@ Run the ros2 driver to enable communication with the robots :
 ros2 launch niryo_ned_ros2_driver driver.launch.py
 ```
 
+Finally, for each robot you need to initialize the conveyor belt by calling the following service:
+```bash
+ros2 service call /niryo_robot/conveyor/ping_and_set_conveyor niryo_ned_ros2_interfaces/srv/SetConveyor "{cmd: 1, id: 9}"
+```
+It has to be called only once, not each time you run the program.
+
 ## Context
 
 A pharmaceutical company based in Basel recruited two interns to perform a robotics integration with Niryo Ned3 Pro robots.  

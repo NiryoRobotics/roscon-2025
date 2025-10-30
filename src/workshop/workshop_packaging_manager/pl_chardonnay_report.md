@@ -537,12 +537,18 @@ As we are working on industrial applications, I decided that it was better to ha
 
 **For the naive solution, test both implementations, with and without the obstacle and report the results.**
 
+´´´bash
+ros2 launch workshop_packaging_manager packaging_moveit2_launch.py
+´´´
+
 ### Nota bene
 To make the conveyor runs, you need to initialize it by calling a niryo service. You just have to call it once, not each time you run the program. 
 
 ```bash
 ros2 service call /niryo_robot/conveyor/ping_and_set_conveyor niryo_ned_ros2_interfaces/srv/SetConveyor "{cmd: 1, id: 9}"
 ```
+
+Don't forget that your ros2driver needs to be running while the program is launched.
 
 ## Conclusion 
 
