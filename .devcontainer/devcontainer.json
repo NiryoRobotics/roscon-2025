@@ -27,12 +27,15 @@
         "vscode": {
             "extensions": [
                 "ms-python.python",
-                "ms-iot.vscode-ros",
+                "ranch-hand-robotics.rde-ros-2",
+                "ranch-hand-robotics.urdf-editor",
+                "ranch-hand-robotics.rde-pack",
                 "ms-python.vscode-pylance",
                 "ms-python.black-formatter",
                 "ms-python.isort",
                 "ms-vscode.cpptools",
                 "ms-vscode.cmake-tools",
+                "shd101wyy.markdown-preview-enhanced",
                 "twxs.cmake"
             ],
             "settings": {
