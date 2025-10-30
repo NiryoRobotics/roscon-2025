@@ -134,6 +134,24 @@ source venv/bin/activate
 pip install -r src/ned-ros2-driver/requirements.txt
 ```
 
+Build the ROS 2 workspace:
+
+```bash
+cd ~/niryo_workshop
+source /opt/ros/jazzy/setup.bash
+colcon build
+```
+
+Add environment setup to your `~/.bashrc` for automatic sourcing in new terminals:
+
+```bash
+# Add these lines to your ~/.bashrc
+echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+echo "source ~/niryo_workshop/venv/bin/activate" >> ~/.bashrc
+echo "source ~/niryo_workshop/install/setup.bash" >> ~/.bashrc
+echo "cd ~/niryo_workshop" >> ~/.bashrc
+```
+
 **Important - ROS Domain Configuration**: 
 During the workshop, multiple robot cells will be operating on the same network. To communicate with your assigned hardware (robot, Raspberry Pi, etc.) while staying isolated from other teams, you need to configure your ROS Domain ID.
 
@@ -162,38 +180,50 @@ export ROS_DOMAIN_ID=XX  # Replace XX with the domain ID written on your robot/R
 
 **Note**: If you switch between different parts of the workshop (quality check vs packaging) or move to a different robot cell, remember to update the `ROS_DOMAIN_ID` and source your bashrc again!
 
-### Common steps (Local and Docker)
+### Final Setup Steps (Both Devcontainer and Local)
 
-Set up the ROS 2 driver configuration:
+Now that your environment is ready, you need to configure the robot connection and initialize the hardware.
 
-```bash
-~/niryo_workshop/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
-```
+**1. Configure the ROS 2 Driver**
 
-
-Add the IP of the Ethernet interface of your robot (written on your table), then save `drivers_list.yaml`.
-
-Build your workspaces and source its setup:
+Edit the driver configuration file to add your robot's IP address:
 
 ```bash
-source /opt/ros/jazzy/setup.bash 
-cd ~/niryo_workshop
-colcon build
-source install/setup.bash
+# Path to the configuration file
+~/niryo_workshop/src/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
 ```
 
-Tip: add the `source` lines to your `~/.bashrc` so you don’t have to source them in every new terminal.
+Open this file and add the IP address of your robot's Ethernet interface (check the label on your robot or table).
 
-Run the ros2 driver to enable communication with the robots : 
+**Example configuration:**
+
+```yaml
+rosbridge_port: 9090
+robot_namespaces:
+  - ""
+robot_ips:
+  - "192.168.1.100"  # Replace with your robot's IP address (found on the robot label)
+```
+
+**Note**: 
+- The robot namespace can remain empty (`""`) for single robot setups
+- Make sure to save the file after editing
+
+**2. Initialize the Conveyor Belt**
+
+First, launch the ROS 2 driver to enable communication with the robot:
+
 ```bash
 ros2 launch niryo_ned_ros2_driver driver.launch.py
 ```
 
-Finally, for each robot you need to initialize the conveyor belt by calling the following service:
+Then, in a **new terminal**, initialize the conveyor belt by calling this service (only needed once per robot):
+
 ```bash
 ros2 service call /niryo_robot/conveyor/ping_and_set_conveyor niryo_ned_ros2_interfaces/srv/SetConveyor "{cmd: 1, id: 9}"
 ```
-It has to be called only once, not each time you run the program.
+
+**Note**: This initialization only needs to be done once per robot, not every time you run your program.
 
 ## Context
 
