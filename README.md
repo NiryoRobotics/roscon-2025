@@ -28,12 +28,7 @@ Please ensure the following before we begin:
 
 Connectivity checklist:
 - Verify each conveyor belt is connected to the Ned3 Pro back panel (tool connector) and that its IR sensor is connected to the conveyor electronics as specified by Niryo. **TODO(Thomas): conveyor electronics ?**
-- Network 1 (Quality Checking line): Raspberry Pi + robot + conveyor + Computer 1 are connected together via the Ethernet switch.
-- Network 2 (Packaging line): Packaging robot + Computer 2 are directly connected via Ethernet (point-to-point).
-- Make sure both computers are NOT connected to the same Wi‑Fi network at the same time to avoid cross-talk (ROS 2 is multi-machine by default). **TODO(Thomas): Réglable par le ROS_DOMAIN_ID non ? -> on doit se focaliser plutôt sur ça**
-- Alternatively, you can set distinct ROS 2 domains to prevent interference, for instance:
-  - Network 1: ROS_DOMAIN_ID=11
-  - Network 2: ROS_DOMAIN_ID=22
+
 
 **Setup overview:**
 ![Workshop setup](src/assets/factory_cell_schematic.png)
@@ -57,6 +52,16 @@ Example considerations (not a one-size-fits-all command):
 - `--network host` (Linux) or proper port/bridge config on other OSes
 - X11 forwarding: `-e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`
 - Mount your workspaces: `-v ~/niryo_workshop:/root/niryo_workshop -v ~/roscon_ws:/root/roscon_ws`
+
+
+### Using a Devcontainer based on our prebuilded image
+
+Make sure you have the Devcontainer extension installed in your VSCode or other IDE. 
+
+Then type Ctrl+Shift+P and select "Reopen in Container" to open the workspace in the container.
+
+The container will be built and the workspace will be opened in the container.
+
 
 ### Locally
 
@@ -90,26 +95,21 @@ source venv/bin/activate
 pip install -r src/ned-ros2-driver/requirements.txt
 ```
 
+Add a ROS_AUTOMATIC_DISCOVERY_RANGE to your .bashrc file to allow the robots to be discovered by the ROS 2 driver without detecting the whole network.
+```bash
+export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+```
+
 ### Common steps (Local and Docker)
-**TODO(Thomas): pas clair, ne pas utiliser nano(laisser les utilisateur utiliser leur IDE)**
+
 Set up the ROS 2 driver configuration:
 
 ```bash
-nano ~/niryo_workshop/src/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
+~/niryo_workshop/src/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
 ```
 
-Never forget to source `niryo_workshop` and `roscon_ws` before running the code.
 
-- Do not add a namespace.
-- Add your robot IP here (QC robot for Computer 1, or Packaging robot for Computer 2).
-- Find your robot IP by connecting via SSH:
-
-```bash
-ssh niryo@ned3pro-[robot_ssid].local
-ip a
-```
-
-Copy the IP of the Ethernet interface, then save `drivers_list.yaml`.
+Add the IP of the Ethernet interface of your robot (written on your table), then save `drivers_list.yaml`.
 
 Build both workspaces and source their setups:
 
