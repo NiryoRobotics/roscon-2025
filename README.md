@@ -86,10 +86,26 @@ source venv/bin/activate
 pip install -r src/ned-ros2-driver/requirements.txt
 ```
 
-Add a ROS_AUTOMATIC_DISCOVERY_RANGE to your .bashrc file to allow the robots to be discovered by the ROS 2 driver without detecting the whole network.
+Add ROS_AUTOMATIC_DISCOVERY_RANGE to your .bashrc file to allow the robots to be discovered by the ROS 2 driver without detecting the whole network. This isolates your workspace from other ROS 2 systems on the network:
+
 ```bash
-export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+echo "export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" >> ~/.bashrc
 ```
+
+**Important - ROS Domain Configuration**: 
+During the workshop, you'll need to communicate with external devices (Raspberry Pi) for specific tasks. To enable this while maintaining network isolation:
+
+- **For Quality Check (Hans-Günther's part)**: Set `ROS_DOMAIN_ID=11` to communicate with the Raspberry Pi
+- **For Packaging (Paul-Louis's part)**: Set `ROS_DOMAIN_ID=22` for the packaging system
+
+Add this to your `~/.bashrc`:
+```bash
+# Uncomment the domain ID you need for your current task
+# export ROS_DOMAIN_ID=11  # For quality check part
+# export ROS_DOMAIN_ID=22  # For packaging part
+```
+
+**Note**: Remember to source your bashrc (`source ~/.bashrc`) or open a new terminal after changing the ROS_DOMAIN_ID!
 
 ### Common steps (Local and Docker)
 

@@ -6,6 +6,25 @@ During my internship in Basel, I was tasked with integrating a Niryo Ned3 Pro ro
 The robot was equipped with a conveyor belt with an IR sensor to detect the presence of a vial. The robot was also equipped with a  customized gripper to pick and place the vials. To check the safety of each vial, we created a testing zone composed by a standard camera and a plate. The camera is plugged to a Raspberry Pi where the safety testing is proceeded. The camera view is displayed to a screen with some logs via an HDMI cable. 
 
 To perform that I will propose two ROS2 packages, that will handle both robot's and raspberry's tasks. 
+
+## Network Configuration - IMPORTANT!
+
+**Before starting this part of the workshop**, you need to configure your ROS 2 network settings to communicate with the Raspberry Pi that handles the quality check vision system.
+
+The quality check system uses **ROS_DOMAIN_ID=11** to communicate with the Raspberry Pi.
+
+Edit your `~/.bashrc` file and uncomment/set the quality check domain ID:
+
+```bash
+export ROS_DOMAIN_ID=11  # For quality check part
+```
+
+Then source your bashrc or open a new terminal:
+```bash
+source ~/.bashrc
+```
+
+This allows your system to communicate with the Raspberry Pi's vision system while staying isolated from other ROS 2 systems on the network.
     
 ## My Solution
 

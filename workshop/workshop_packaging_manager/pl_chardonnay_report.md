@@ -7,6 +7,25 @@ The goal of the integration is simple : a vial is detected by an IR sensor on a 
 
 To perform that I will propose a ROS2 package that will handle the robot's task. 
 
+## Network Configuration - IMPORTANT!
+
+**Before starting this part of the workshop**, you need to configure your ROS 2 network settings to communicate with the packaging system.
+
+The packaging line uses **ROS_DOMAIN_ID=22** to isolate its network communication.
+
+Edit your `~/.bashrc` file and uncomment/set the packaging domain ID:
+
+```bash
+export ROS_DOMAIN_ID=22  # For packaging part
+```
+
+Then source your bashrc or open a new terminal:
+```bash
+source ~/.bashrc
+```
+
+This allows your system to communicate with the packaging robot while staying isolated from other ROS 2 systems on the network.
+
 ## My Solution
 
 ### Architecture 
