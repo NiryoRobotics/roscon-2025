@@ -9,25 +9,20 @@
     //     "dockerfile": "Dockerfile",
     //     "context": "..",
     //     "args": {
-    //         "USER_UID": "1000",
-    //         "USER_GID": "1000",
-    //         "USERNAME": "niryo",
     //         "WORKSPACE_NAME": "niryo_workshop"
     //     }
     // },
-    
-    "runArgs": [
-        "--net=host",
-        "-e", "DISPLAY=${localEnv:DISPLAY:-:0}",
-        "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
-        "--device=/dev/dri",
-        "--privileged"
-    ],
-    
-    "mounts": [
+
+     "mounts": [
         "source=${localWorkspaceFolder},target=/home/niryo/niryo_workshop/src/roscon-2025,type=bind,consistency=cached"
     ],
-    
+
+    "runArgs": [
+      "--net=host",
+      "-e", "DISPLAY=${localEnv:DISPLAY}",
+      "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
+      "--device", "/dev/dri"
+    ],
     "customizations": {
         "vscode": {
             "extensions": [
@@ -41,18 +36,16 @@
                 "twxs.cmake"
             ],
             "settings": {
-                "python.defaultInterpreterPath": "/home/niryo/niryo_workshop/venv/bin/python",
+                "python.defaultInterpreterPath": "/root/niryo_workshop/venv/bin/python",
                 "python.terminal.activateEnvironment": true,
                 "terminal.integrated.defaultProfile.linux": "bash",
-                "terminal.integrated.cwd": "/home/niryo/niryo_workshop"
+                "terminal.integrated.cwd": "/root/niryo_workshop"
             }
         }
     },
-    
-    "remoteUser": "niryo",
-    "workspaceFolder": "/home/niryo/niryo_workshop",
-    "postCreateCommand": "echo 'Welcome to the Niryo ROS2 Workshop! Your environment is ready.' && cd /home/niryo/niryo_workshop && (source install/setup.bash 2>/dev/null || echo 'Run build-workspace to build the ROS packages')",
-    
+    "remoteUser": "root",
+    "postCreateCommand": "echo 'Welcome to the Niryo ROS2 Workshop! Your environment is ready.' && cd /root/niryo_workshop && (source install/setup.bash 2>/dev/null || echo 'Run build-workspace to build the ROS packages')",
+        
     "forwardPorts": [9090],
     "portsAttributes": {
         "9090": {
@@ -60,5 +53,4 @@
             "onAutoForward": "notify"
         }
     }
-}
-  
+  }
