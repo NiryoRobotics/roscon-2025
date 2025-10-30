@@ -138,6 +138,12 @@ The only method to implement in this class is the `set_running` method, that is 
 
 To set the speed of the conveyor belt, we create a request to the service client and set the speed to the desired value along with the direction of the conveyor belt.
 
+To create the request, we first create a `ControlConveyor.Request` object.
+
+```python
+req = ControlConveyor.Request()
+```
+
 Here is the request type to control the conveyor belt :
 ```python
 uint8 id
