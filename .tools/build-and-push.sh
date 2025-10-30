@@ -9,13 +9,29 @@ set -e
 IMAGE_NAME="roscon-2025-workshop"
 REGISTRY="ghcr.io/niryorobotics"
 TAG="latest"
+ROSCON_BRANCH="main"  # Default branch for roscon-2025 repo
 
 # Parse arguments
 NO_CACHE=""
-if [[ "$1" == "--no-cache" ]]; then
-    NO_CACHE="--no-cache"
-    echo "🔄 Building without cache (will re-clone repositories)"
-fi
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --no-cache)
+            NO_CACHE="--no-cache"
+            echo "🔄 Building without cache (will re-clone repositories)"
+            shift
+            ;;
+        --branch)
+            ROSCON_BRANCH="$2"
+            echo "🌿 Using branch: $ROSCON_BRANCH for roscon-2025 repo"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--no-cache] [--branch <branch_name>]"
+            exit 1
+            ;;
+    esac
+done
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -38,6 +54,7 @@ echo -e "${BLUE}🔨 Building Docker image...${NC}"
 docker build \
     $NO_CACHE \
     --network=host \
+    --build-arg ROSCON_BRANCH=$ROSCON_BRANCH \
     --file .devcontainer/Dockerfile \
     --tag $IMAGE_NAME:$TAG \
     --tag $REGISTRY/$IMAGE_NAME:$TAG \
@@ -63,3 +80,6 @@ echo -e "${GREEN}🎉 Done! Image ready for workshop participants.${NC}"
 echo ""
 echo -e "${BLUE}💡 Tip: Use --no-cache to force rebuild and re-clone repositories${NC}"
 echo -e "${BLUE}   Example: ./build-and-push.sh --no-cache${NC}"
+echo -e "${BLUE}💡 Tip: Use --branch to specify roscon-2025 branch to clone${NC}"
+echo -e "${BLUE}   Example: ./build-and-push.sh --branch feature-xyz${NC}"
+echo -e "${BLUE}   Example: ./build-and-push.sh --no-cache --branch develop${NC}"
