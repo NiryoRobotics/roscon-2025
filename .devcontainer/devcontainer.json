@@ -2,7 +2,7 @@
     "name": "ROS2 Jazzy Niryo Workshop",
     
     // Use pre-built image from registry (recommended for workshop participants)
-    "image": "ghcr.io/niryorobotics/niryo/roscon-2025-workshop:latest",
+    "image": "ghcr.io/niryorobotics/roscon-2025-workshop:latest",
     
     // Alternative: Build locally from Dockerfile (uncomment to use local build)
     // "build": {
