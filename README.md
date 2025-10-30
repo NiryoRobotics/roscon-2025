@@ -105,7 +105,7 @@ export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
 Set up the ROS 2 driver configuration:
 
 ```bash
-~/niryo_workshop/src/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
+~/niryo_workshop/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
 ```
 
 
@@ -167,7 +167,7 @@ He will be in charge of the Packaging line integration, as he has "already" work
 
 Gameplay : Paul-Louis implemented a lazy solution that is not very sophisticated. He just did the bare minimum to pass the internship. Nevertheless, the feedback will be performed by the Niryo Team, it will thus be more guided than a professor would, and it is also more industry oriented. This character is perfect for persons who want to discover how ROS2 tools can be used to perform a real industrial integration, and know more about trajectories and industrial planning.
 
-Click [here](src/workshop/workshop_packaging_manager/pl_chardonnay_report.md) to read his report.
+Click [here](workshop/workshop_packaging_manager/pl_chardonnay_report.md) to read his report.
 
 ### Hans-Günther Biermann
 
@@ -185,12 +185,12 @@ He will be in charge of the Quality Check line integration, as he has strong bac
 
 Gameplay : Hans-Günther implemented a solution that is over-engineered for the task, leading to an unefficient solution with a complex architecture. The feedback will be performed by a university professor that does not have engough time to provide a guided feedback leading to a perfect solution. This character is perfect for persons who want to learn how to design and lead a complex integration project, based on ROS2 and that uses principles of good Python programming, such as encapsulation, multi-threading... It also talks about AI integration in an industrial context.
 
-Click [here](src/workshop/workshop_quality_check_manager/hg_biermann_report.md) to read his report.
+Click [here](workshop/workshop_quality_check_manager/hg_biermann_report.md) to read his report.
 
 ## Next Step
 
 For the following parts of the workshop, we will divide your team in two groups : Those who will read and follow the work of Paul-Louis, and the others who will read and follow the work of Hans-Günther. 
 
-To start the reproducing the Naive solution, please start from the packages located inside the `src/workshop` folder.
+To start the reproducing the Naive solution, please start from the packages located inside the `workshop` folder.
 
 Each markdown file contains the instructions to reproduce the Naive solution on Hans-Günther's or Paul-Louis's line.
