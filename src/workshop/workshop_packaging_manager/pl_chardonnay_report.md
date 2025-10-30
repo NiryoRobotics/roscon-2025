@@ -437,6 +437,8 @@ return LaunchDescription([
 
 ### Testing 
 
+**For the following steps, please refer to the code in the `src/workshop/workshop_packaging_manager/scripts/packaging_node.py` file.**
+
 To test my implementation, I decided to create a simple logic to begin my main loop. 
 
 At the begining of the loop the conveyor belt is set to run.
