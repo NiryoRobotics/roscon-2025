@@ -54,7 +54,7 @@ I know that my fellow intern decided to add some other parameters to be able to 
 Then, the node loads the poses from the `poses.yaml` file using the `_load_poses` method.
 
 ```python
-self.poses = self._load_poses()
+    self.poses = self._load_poses()
 
 
     def _load_poses(self) -> dict:
