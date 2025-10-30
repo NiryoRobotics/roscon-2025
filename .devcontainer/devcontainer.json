@@ -13,9 +13,8 @@
     //     }
     // },
 
-     "mounts": [
-        "source=${localWorkspaceFolder},target=/home/niryo/niryo_workshop/src/roscon-2025,type=bind,consistency=cached"
-    ],
+    "workspaceFolder": "/root/niryo_workshop",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/root/niryo_workshop/src/roscon-2025,type=bind",
 
     "runArgs": [
       "--net=host",
