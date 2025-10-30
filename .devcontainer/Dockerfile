@@ -67,6 +67,7 @@ RUN python3 -m venv /home/$USERNAME/$WORKSPACE_NAME/venv --system-site-packages 
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/$USERNAME/.bashrc && \
     echo "source /home/$USERNAME/$WORKSPACE_NAME/venv/bin/activate" >> /home/$USERNAME/.bashrc && \
     echo "source /home/$USERNAME/$WORKSPACE_NAME/install/setup.bash" >> /home/$USERNAME/.bashrc && \
+    echo "export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" >> /home/$USERNAME/.bashrc && \
     echo "cd /home/$USERNAME/$WORKSPACE_NAME" >> /home/$USERNAME/.bashrc
 
 # Build ROS workspace
