@@ -2,6 +2,7 @@
 FROM osrf/ros:jazzy-desktop
 
 ARG WORKSPACE_NAME=niryo_workshop
+ARG ROSCON_BRANCH=main
 
 # Required Tools (Including Visualizing)
 RUN apt-get update && apt-get install -y \
@@ -32,7 +33,7 @@ RUN mkdir -p /root/$WORKSPACE_NAME/src
 # Clone repositories
 WORKDIR /root/$WORKSPACE_NAME/src
 RUN git clone https://github.com/NiryoRobotics/ned-ros2-driver.git && \
-    git clone https://github.com/NiryoRobotics/roscon-2025.git
+    git clone -b $ROSCON_BRANCH https://github.com/NiryoRobotics/roscon-2025.git
 
 # Install ROS dependencies
 WORKDIR /root/$WORKSPACE_NAME
