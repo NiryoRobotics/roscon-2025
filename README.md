@@ -37,24 +37,7 @@ Connectivity checklist:
 
 There are two ways to run the workshop environment: locally (if you already have ROS 2 Jazzy on your machine) or using our Docker image (recommended for consistency).
 
-TODO(Thomas) ajouter la doc pour utiliser le devcontainer 
-### With Docker (recommended)
-
-Run the provided image with Docker, or build a new one using the included Dockerfile.
-
-- Ensure Docker has access to your host network (for ROS 2 discovery across devices).
-- Ensure GUI access if you plan to run graphical tools (e.g., export X11 or use Wayland/XQuartz depending on your OS).
-- If needed, ask GPT for a tailored `docker run` command for your operating system.
-  **TODO(Thomas): Non ! on ne demande pas à chatgpt, c'est tout sauf pro. On peut lister la majorité des config pour que le container fonctionne et éventuellement  c'est l'utilisateur qui met la bonne configuration parmis la liste proposée.**
-
-**TODO(Thomas) lister des configs spécifiques et surtout écrire les commandes à juste copy/paste**
-Example considerations (not a one-size-fits-all command):
-- `--network host` (Linux) or proper port/bridge config on other OSes
-- X11 forwarding: `-e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`
-- Mount your workspaces: `-v ~/niryo_workshop:/root/niryo_workshop -v ~/roscon_ws:/root/roscon_ws`
-
-
-### Using a Devcontainer based on our prebuilded image
+### Using a Devcontainer based on our prebuilded image (recommended)
 
 Make sure you have the Devcontainer extension installed in your VSCode or other IDE. 
 
@@ -62,14 +45,22 @@ Then type Ctrl+Shift+P and select "Reopen in Container" to open the workspace in
 
 The container will be built and the workspace will be opened in the container.
 
+### Troubleshooting
 
-### Locally
+Using the Dockerfile, build locally the image, making sure Docker has access to your host network and Display (e.g., export X11 or use Wayland/XQuartz depending on your OS). 
+
+```bash
+docker build -t roscon-2025-workshop .
+```
+Then run the container in your IDE using the command "Reopen in Container".
+
+### Locally 
 
 Create a new workspace and clone the Ned ROS 2 driver in the source folder:
 
 ```bash
-mkdir -p ~/niryo_workshop/src
-cd ~/niryo_workshop/src
+mkdir -p ~/niryo_workshop/
+cd ~/niryo_workshop/
 git clone https://github.com/NiryoRobotics/ned-ros2-driver.git
 ```
 
@@ -111,15 +102,11 @@ Set up the ROS 2 driver configuration:
 
 Add the IP of the Ethernet interface of your robot (written on your table), then save `drivers_list.yaml`.
 
-Build both workspaces and source their setups:
+Build your workspaces and source its setup:
 
 ```bash
 source /opt/ros/jazzy/setup.bash 
 cd ~/niryo_workshop
-colcon build
-source install/setup.bash
-
-cd ~/roscon_ws
 colcon build
 source install/setup.bash
 ```
