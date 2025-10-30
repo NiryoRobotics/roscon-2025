@@ -51,18 +51,32 @@ The topic, services and actions names are also set as parameters in order to be 
 
 I know that my fellow intern decided to add some other parameters to be able to change joint or girpper parameters in the future, but why the hell would you change joints or girpper type for a fixed application ? That's why I decided to not add them as parameters.
 
-Then, the node loads the poses from the `poses.yaml` file.
+Then, the node loads the poses from the `poses.yaml` file using the `_load_poses` method.
 
 ```python
-# --- Poses ---
-default_poses_path = os.path.join(
-    get_package_share_directory("workshop_packaging_manager"), "config", "poses.yaml"
-)
-poses_path = self.declare_parameter("poses_path", default_poses_path).get_parameter_value().string_value
-with open(poses_path, "r") as f:
-    poses_file = yaml.safe_load(f)
-poses = poses_file.get("poses", {})
+self.poses = self._load_poses()
+
+
+    def _load_poses(self) -> dict:
+        """Load poses from poses.yaml file"""
+        try:
+            package_share_directory = get_package_share_directory('workshop_packaging_manager')
+            poses_file_path = os.path.join(package_share_directory, 'config', 'poses.yaml')
+            
+            with open(poses_file_path, 'r') as file:
+                poses_data = yaml.safe_load(file)
+            
+            self.get_logger().info(f"Loaded poses: {list(poses_data['poses'].keys())}")
+            return poses_data['poses']
+            
+        except Exception as e:
+            self.get_logger().error(f"Failed to load poses.yaml: {e}")
+            # Return default poses if file loading fails
+            return {
+                'home': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            }
 ```
+
 The poses are loaded from the `poses.yaml` file. The file is located in the `config` folder of the `workshop_packaging_manager` package. The file contains the poses for the robot to move to. They are configured into a .yaml file to be able to easily modify them if needed, as each robot can slightly differ from the other. 
 
 As described in the schema, the node creates a `Conveyor Controller`.

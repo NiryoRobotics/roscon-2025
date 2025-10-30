@@ -469,8 +469,7 @@ class PackagingNodeMoveIt2(Node):
             self.get_logger().error(f"Failed to load poses.yaml: {e}")
             # Return default poses if file loading fails
             return {
-                'grip': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                'safe': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                'home': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             }
 
     def _on_digital_state(self, msg: DigitalIOState) -> None:
