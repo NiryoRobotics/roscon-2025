@@ -26,35 +26,83 @@ Please ensure the following before we begin:
   - 1x Raspberry Pi 4 connected to a screen via HDMI
   - 1x Ethernet switch and 3x Ethernet cables
 
-Connectivity checklist:
-- Verify each conveyor belt is connected to the Ned3 Pro back panel (tool connector) and that its IR sensor is connected to the conveyor electronics as specified by Niryo. **TODO(Thomas): conveyor electronics ?**
-
-
 **Setup overview:**
 ![Workshop setup](assets/factory_cell_schematic.png)
 
 ## Software setup
 
-There are two ways to run the workshop environment: locally (if you already have ROS 2 Jazzy on your machine) or using our Docker image (recommended for consistency).
+There are two ways to run the workshop environment: using a devcontainer (recommended for consistency and ease of setup) or installing locally (if you already have ROS 2 Jazzy on your machine).
 
-### Using a Devcontainer based on our prebuilded image (recommended)
+### Using a Devcontainer (Recommended)
 
-Make sure you have the Devcontainer extension installed in your VSCode or other IDE. 
+**Prerequisites**: 
+- Install [Docker](https://docs.docker.com/get-docker/) on your machine
+- Install [VS Code](https://code.visualstudio.com/) with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
-Then type Ctrl+Shift+P and select "Reopen in Container" to open the workspace in the container.
+**Option 1: Using the Pre-built Image from Registry (Recommended)**
 
-The container will be built and the workspace will be opened in the container.
+This is the fastest and easiest option. The image is already built and ready to use.
 
-### Troubleshooting
+1. Clone the workshop repository:
+   ```bash
+   git clone https://github.com/NiryoRobotics/roscon-2025.git
+   cd roscon-2025
+   ```
 
-Using the Dockerfile, build locally the image, making sure Docker has access to your host network and Display (e.g., export X11 or use Wayland/XQuartz depending on your OS). 
+2. Open in VS Code:
+   ```bash
+   code .
+   ```
 
-```bash
-docker build -t roscon-2025-workshop .
-```
-Then run the container in your IDE using the command "Reopen in Container".
+3. Open the devcontainer:
+   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+   - Select `Dev Containers: Reopen in Container`
+   - Wait for the container to start (first time may take a few minutes to download the image)
 
-### Locally 
+4. The workspace will open at `/root/niryo_workshop` with all dependencies pre-installed!
+
+**Option 2: Building the Image Locally from Dockerfile**
+
+If you prefer to build the image yourself or need to customize the Dockerfile:
+
+1. Clone the workshop repository:
+   ```bash
+   git clone https://github.com/NiryoRobotics/roscon-2025.git
+   cd roscon-2025
+   ```
+
+2. Edit `.devcontainer/devcontainer.json`:
+   - **Comment out** the `"image"` line:
+     ```jsonc
+     // "image": "ghcr.io/niryorobotics/roscon-2025-workshop:latest",
+     ```
+   - **Uncomment** the `"build"` section:
+     ```jsonc
+     "build": {
+         "dockerfile": "Dockerfile",
+         "context": "..",
+         "args": {
+             "WORKSPACE_NAME": "niryo_workshop"
+         }
+     },
+     ```
+
+3. Open in VS Code and start the devcontainer:
+   ```bash
+   code .
+   ```
+   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+   - Select `Dev Containers: Reopen in Container`
+   - Wait for the build to complete (first build may take 10-15 minutes)
+
+4. The workspace will open at `/root/niryo_workshop` with all dependencies built locally!
+
+**Troubleshooting Devcontainer Issues**:
+- **GUI/Display issues**: Make sure Docker has access to your X11 display (Linux) or use XQuartz (Mac) / VcXsrv (Windows)
+- **Network issues**: Ensure Docker has network access (`--net=host` is configured in the devcontainer)
+- **Rebuild container**: If something goes wrong, use `Dev Containers: Rebuild Container` from the command palette
+
+### Local Installation (Without Docker) 
 
 Create a new workspace and clone the Ned ROS 2 driver in the source folder:
 
@@ -84,12 +132,6 @@ cd ~/niryo_workshop
 python3 -m venv venv --system-site-packages
 source venv/bin/activate
 pip install -r src/ned-ros2-driver/requirements.txt
-```
-
-Add ROS_AUTOMATIC_DISCOVERY_RANGE to your .bashrc file to allow the robots to be discovered by the ROS 2 driver without detecting the whole network. This isolates your workspace from other ROS 2 systems on the network:
-
-```bash
-echo "export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" >> ~/.bashrc
 ```
 
 **Important - ROS Domain Configuration**: 
