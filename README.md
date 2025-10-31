@@ -1,17 +1,75 @@
+## Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Introduction](#introduction)
+- [Workshop Overview \& Learning Objectives](#workshop-overview--learning-objectives)
+  - [The Challenge](#the-challenge)
+  - [What You'll Learn](#what-youll-learn)
+  - [Workshop Structure](#workshop-structure)
+- [Hardware setup](#hardware-setup)
+- [Software setup](#software-setup)
+  - [Using a Devcontainer (Recommended)](#using-a-devcontainer-recommended)
+  - [Local Installation (Without Docker)](#local-installation-without-docker)
+  - [Final Setup Steps (Both Devcontainer and Local)](#final-setup-steps-both-devcontainer-and-local)
+- [Context](#context)
+  - [The Story](#the-story)
+  - [Your Mission](#your-mission)
+  - [Meet the Interns](#meet-the-interns)
+  - [Paul-Louis Chardonnay](#paul-louis-chardonnay)
+  - [Hans-Günther Biermann](#hans-günther-biermann)
+- [Next Steps](#next-steps)
+  - [1. Divide Your Team](#1-divide-your-team)
+  - [2. Read Your Assigned Internship Report](#2-read-your-assigned-internship-report)
+  - [3. Follow the Instructions in the Reports](#3-follow-the-instructions-in-the-reports)
+  - [4. Work Through the Workshop Phases](#4-work-through-the-workshop-phases)
+  - [5. Important Reminders](#5-important-reminders)
+
+---
+
 ## Introduction
 
 Welcome to the ROSCON FR/DE 2025 "Get Your Hands Dirty" workshop! Thank you for joining us and for your enthusiasm to build, test, and iterate hands-on with ROS 2 and MoveIt 2.
 
-- Date: November 17, 2025
-- Location: Strasbourg/Straßburg
-- Duration: approximately 4 hours
-- Team setup: please form teams of 4 before beginning
+**Workshop Details:**
+- **Date:** November 17, 2025
+- **Location:** Strasbourg/Straßburg
+- **Duration:** Approximately 4 hours
+- **Team Setup:** Please form teams of 4 before beginning
 
 Over the next few hours, you and your teammates will explore a ready-to-run robotics stack, integrate motion planning, and iterate on real-world integration tasks. The goal is to learn by doing, share insights, and have fun building together.
 
-Special thanks to the Niryo Core Team : Thomas Deffontaines (Integration Team), Justin Mottier, Thomas Degallaix, Christopher Dedeurwaerder & Pierre Hantson (Software Team)
+**Special thanks to the Niryo Core Team:** Thomas Deffontaines (Integration Team), Justin Mottier, Thomas Degallaix, Christopher Dedeurwaerder & Pierre Hantson (Software Team)
 
 Let’s get started!
+
+---
+
+## Workshop Overview & Learning Objectives
+
+### The Challenge
+
+You'll step into the shoes of robotics integrators working for a **pharmaceutical company in Basel**. Your mission: automate a factory line that sorts and packages chemical products in vials.
+
+The factory has two critical production lines:
+
+1. **Quality Check Line** - Sort vials by color (safe vs. unsafe) using computer vision
+2. **Packaging Line** - Pack approved vials into boxes for shipment to pharmacies worldwide
+
+### What You'll Learn
+
+- **MoveIt 2 Motion Planning** - Implement pick-and-place operations with industrial robots
+- **Real-World Integration** - Work with conveyor belts, IR sensors, and cameras
+- **Code Optimization** - Improve "naive" solutions based on industry feedback
+- **Collaborative Robotics** - Coordinate between quality check and packaging systems
+
+### Workshop Structure
+
+1. **Setup** - Configure your environment and connect to hardware
+2. **Reproduce the Naive Solution** - Follow intern reports to build a working system
+3. **Analyze & Improve** - Apply professor feedback to optimize performance
+4. **Bonus Challenges** (optional) - Add your own improvements and exceed requirements
+
+---
 
 ## Hardware setup
 
@@ -28,6 +86,8 @@ Please ensure the following before we begin:
 
 **Setup overview:**
 ![Workshop setup](assets/factory_cell_schematic.png)
+
+--- 
 
 ## Software setup
 
@@ -225,60 +285,120 @@ ros2 service call /niryo_robot/conveyor/ping_and_set_conveyor niryo_ned_ros2_int
 
 **Note**: This initialization only needs to be done once per robot, not every time you run your program.
 
+---
+
 ## Context
 
-A pharmaceutical company based in Basel recruited two interns to perform a robotics integration with Niryo Ned3 Pro robots.  
-The goal of this integration is to mimic the behavior of an entire factory that sorts chemical products in vials between safe and unsafe categories (classified according to their color) and packs them into boxes to be shipped to pharmacies all over the world. 
+### The Story
 
-In this workshop, you will read their internship report. They will explain how they performed their solution.  
-Your first goal will be to follow their path to recreate this solution. We will call it the **"Naive Solution"**, as it works but in an imperfect way.  
+A pharmaceutical company based in Basel recruited two interns to automate their factory production line with Niryo Ned3 Pro robots. The factory needs to sort chemical products in vials between safe and unsafe categories (classified by color) and pack them into boxes for shipment to pharmacies worldwide.
 
-Your second goal will be to read the professor's comments on their report. They suggested ways to enhance the performance of the solution in order to meet the requirements expected by the company.  
+### Your Mission
 
-Finally, as a bonus, feel free to apply the professor's feedback not only to the corresponding part of the solution but also to other parts, and add your own improvements to exceed the company's requirements.
+In this workshop, you'll step into the role of these interns by reading their detailed reports and following their implementation journey.
 
-Here are the profiles of both students : 
+**The Workshop Flow:**
+
+1. **Reproduce the "Naive Solution"** - Follow the interns' reports to recreate their working but imperfect implementations
+2. **Read the Feedback** - Study the professor's and Niryo team's comments on how to improve the solutions
+3. **Enhance the System** - Apply the suggested improvements to meet the company's performance requirements
+4. **Bonus Challenges** - Go beyond the feedback and add your own creative optimizations
+
+### Meet the Interns
+
+Two students worked on this project, each tackling a different part of the production line. Choose your path based on what you want to learn!
+
+---
 
 ### Paul-Louis Chardonnay
 
+![Paul-Louis Chardonnay](assets/plchar.png)
 
+**Education:** Final year of Master's degree in Mechatronics Engineering at the University of Lille
 
-Education : Final year of Master's degree in Mechatronics Engineering at the University of Lille
+**Skills:** Experience with ROS 2 and MoveIt 2, understands the basics of robotics hardware and automation.
 
-Skills : Experience with ROS 2 and MoveIt 2, understands the basics of robotics hardware and automation.
-
-Personality :
+**Personality:**
 - Adept of the "good enough" principle, so that he can meet on time with his friends for the "apéro" at 6pm to the local bar (the only time he is not late)
 - Lied on his resume to get the internship, especially about his experience with Moveit 2 (he just know the name of the framework) and his level in german (he just know the word "Hallo", but they pay more there).
 
-He will be in charge of the Packaging line integration, as he has "already" worked with Moveit 2. And as a frenchman, he will be able to communicate with the Niryo integration team if he needs help with the trajectories and the hardware.
+**Assignment:** Packaging line integration, as he has "already" worked with Moveit 2. And as a frenchman, he will be able to communicate with the Niryo integration team if he needs help with the trajectories and the hardware.
 
-Gameplay : Paul-Louis implemented a lazy solution that is not very sophisticated. He just did the bare minimum to pass the internship. Nevertheless, the feedback will be performed by the Niryo Team, it will thus be more guided than a professor would, and it is also more industry oriented. This character is perfect for persons who want to discover how ROS2 tools can be used to perform a real industrial integration, and know more about trajectories and industrial planning.
+**Gameplay:** Paul-Louis implemented a lazy solution that is not very sophisticated. He just did the bare minimum to pass the internship. Nevertheless, the feedback will be performed by the Niryo Team, it will thus be more guided than a professor would, and it is also more industry oriented. This character is perfect for persons who want to discover how ROS2 tools can be used to perform a real industrial integration, and know more about trajectories and industrial planning.
 
-Click [here](workshop/workshop_packaging_manager/pl_chardonnay_report.md) to read his report.
+---
 
 ### Hans-Günther Biermann
 
+![Hans-Günther Biermann](assets/hansgunther.png)
 
+**Education:** Bachelor's degree in Computer Science at the University of Stuttgart
 
-Education : Bachelor's degree in Computer Science at the University of Stuttgart
+**Skills:** Comfortable with Python and programming in general, took an optional course in computer vision applied to robotics so he can handle basic ROS 2 tasks.
 
-Skills : Comfortable with Python and programming in general, took an optional course in computer vision applied to robotics so he can handle basic ROS 2 tasks.
-
-Personality :
+**Personality:**
 - Drinks a beer for breakfast at 6.30am every day to enhance his concentration and work all day long without stopping.
 - Always thinks about performance and efficiency, overthinking is the best quality to be a good engineer in his opinion.
 
-He will be in charge of the Quality Check line integration, as he has strong background in computer vision.
+**Assignment:** Quality Check line integration, as he has strong background in computer vision.
 
-Gameplay : Hans-Günther implemented a solution that is over-engineered for the task, leading to an unefficient solution with a complex architecture. The feedback will be performed by a university professor that does not have engough time to provide a guided feedback leading to a perfect solution. This character is perfect for persons who want to learn how to design and lead a complex integration project, based on ROS2 and that uses principles of good Python programming, such as encapsulation, multi-threading... It also talks about AI integration in an industrial context.
+**Gameplay:** Hans-Günther implemented a solution that is over-engineered for the task, leading to an unefficient solution with a complex architecture. The feedback will be performed by a university professor that does not have engough time to provide a guided feedback leading to a perfect solution. This character is perfect for persons who want to learn how to design and lead a complex integration project, based on ROS2 and that uses principles of good Python programming, such as encapsulation, multi-threading... It also talks about AI integration in an industrial context.
 
-Click [here](workshop/workshop_quality_check_manager/hg_biermann_report.md) to read his report.
+---
 
-## Next Step
+## Next Steps
 
-For the following parts of the workshop, we will divide your team in two groups : Those who will read and follow the work of Paul-Louis, and the others who will read and follow the work of Hans-Günther. 
+### 1. Divide Your Team
 
-To start the reproducing the Naive solution, please start from the packages located inside the `workshop` folder.
+For the following parts of the workshop, **divide your team of 4 into two groups:**
 
-Each markdown file contains the instructions to reproduce the Naive solution on Hans-Günther's or Paul-Louis's line.
+- **Group 1 (2 people):** Follow the work of **Paul-Louis** on the **Packaging Line**
+- **Group 2 (2 people):** Follow the work of **Hans-Günther** on the **Quality Check Line**
+
+### 2. Read Your Assigned Internship Report
+
+Each intern wrote a detailed report explaining their solution. **Click on the links below to access the reports:**
+
+- 📦 **Packaging Line Team:** [Paul-Louis Chardonnay's Report](workshop/workshop_packaging_manager/pl_chardonnay_report.md)
+- 🔍 **Quality Check Line Team:** [Hans-Günther Biermann's Report](workshop/workshop_quality_check_manager/hg_biermann_report.md)
+
+### 3. Follow the Instructions in the Reports
+
+Each report contains:
+
+1. **Network Configuration** - How to configure your ROS_DOMAIN_ID for your hardware cell
+2. **Architecture Overview** - Understanding the system design
+3. **Implementation Steps** - Detailed code walkthrough
+4. **Running the Naive Solution** - Launch commands and testing procedures
+5. **Professor/Niryo Team Feedback** - Suggestions for improvements (read this after you get the naive solution working!)
+
+### 4. Work Through the Workshop Phases
+
+**Phase 1: Reproduce the Naive Solution**
+- Navigate to the corresponding package in the `workshop/` folder
+- Follow the step-by-step instructions in your intern's report
+- Get their basic implementation running on the hardware
+
+**Phase 2: Analyze and Improve**
+- Read the feedback section at the end of the report
+- Identify inefficiencies and bottlenecks in the naive implementation
+- Apply the suggested improvements to optimize performance
+- Test your enhanced solution
+
+**Phase 3: Bonus Challenges (Optional)**
+- Apply feedback to other parts of the solution beyond what's suggested
+- Add your own creative improvements
+- Coordinate with the other team to achieve end-to-end factory automation
+- Compare your implementation with the reference solutions in the `solutions/` folder
+
+### 5. Important Reminders
+
+- **Configure ROS_DOMAIN_ID** before starting (instructions in each report)
+- **Work in the `workshop/` packages**, not the `solutions/` folder
+- Each markdown report is your guide - follow it carefully!
+- Don't hesitate to ask the Niryo team for help during the workshop
+
+---
+
+**Ready to start? Click your team's report link above and begin your robotics integration journey!** 🚀
+
