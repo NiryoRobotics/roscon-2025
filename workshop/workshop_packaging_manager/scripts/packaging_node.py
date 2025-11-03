@@ -289,8 +289,8 @@ class PickAndPlaceExecutorMoveIt2:
                 collision_object = CollisionObject()
                 collision_object.header.frame_id = frame_id
                 collision_object.id = object_id
-                
-                # Créer la primitive selon le type
+
+                # Create the primitive based on the type
                 primitive = SolidPrimitive()
                 
                 if object_type.lower() == "box":
@@ -298,15 +298,15 @@ class PickAndPlaceExecutorMoveIt2:
                     primitive.dimensions = list(dimensions)
                 elif object_type.lower() == "cylinder":
                     primitive.type = SolidPrimitive.CYLINDER
-                    primitive.dimensions = [dimensions[0], dimensions[1]]  # rayon, hauteur
+                    primitive.dimensions = [dimensions[0], dimensions[1]]  # radius, height
                 elif object_type.lower() == "sphere":
                     primitive.type = SolidPrimitive.SPHERE
-                    primitive.dimensions = [dimensions[0]]  # rayon seulement
+                    primitive.dimensions = [dimensions[0]]  # radius only
                 else:
                     self._logger.error(f"Unsupported object type: {object_type}")
                     return False
                 
-                # Créer la pose
+                # Create the pose
                 pose = Pose()
                 pose.position.x = position[0]
                 pose.position.y = position[1]
@@ -315,13 +315,13 @@ class PickAndPlaceExecutorMoveIt2:
                 pose.orientation.y = orientation[1]
                 pose.orientation.z = orientation[2]
                 pose.orientation.w = orientation[3]
-                
-                # Ajouter à l'objet de collision
+
+                # Add to the collision object
                 collision_object.primitives.append(primitive)
                 collision_object.primitive_poses.append(pose)
                 collision_object.operation = CollisionObject.ADD
-                
-                # Appliquer à la scène
+
+                # Apply to the scene
                 scene.apply_collision_object(collision_object)
                 scene.current_state.update()
                 
