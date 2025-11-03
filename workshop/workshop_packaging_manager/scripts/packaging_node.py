@@ -47,13 +47,7 @@ class PackagingNode(Node) :
         self.conveyor = ConveyorController(self, self.conveyor_service, self.conveyor_id, self.speed)
         
         # Load poses from YAML file
-        default_poses_path = os.path.join(
-            get_package_share_directory("workshop_packaging_manager"), "config", "poses.yaml"
-        )
-        poses_path = self.declare_parameter("poses_path", default_poses_path).get_parameter_value().string_value
-        with open(poses_path, "r") as f:
-            poses_file = yaml.safe_load(f)
-        poses = poses_file.get("poses", {})     
+        self.poses = self._load_poses()
 
         # Initialize MoveIt2
         try:
@@ -85,6 +79,9 @@ class PackagingNode(Node) :
             # TODO: Implement the run loop
             pass
 
+    def _load_poses(self) -> dict:
+        # TODO: Implement the load poses method
+        pass
 
 class ConveyorController:
 

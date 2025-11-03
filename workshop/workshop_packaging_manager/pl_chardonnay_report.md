@@ -49,7 +49,6 @@ flowchart TD;
     G["IR SENSOR **Topic**"] -->|"Sends data"| A;
 ```
 
-**For the following steps, please refer to the code in the `src/workshop/workshop_packaging_manager/scripts/packaging_node.py` file.**
 
 Starting with the main Class, the `Packaging Node`. 
 
@@ -68,7 +67,7 @@ It starts with the initialization of the parameters :
         ).get_parameter_value().string_value
 ```
 
-The niryo conveyor belt has an ID of 9 by default. The id is nevertheless set as a parameter to be able to use another conveyor belt if needed in a future implementation. 
+The niryo conveyor belt has an ID of 9 by default, which corresponds to its position in the TTL bus. The id is besides set as a parameter to be able to use another conveyor belt if needed in a future implementation. 
 
 The speed parameter describes the percentage of the conveyor belt max speed. I decided to set it by 60% by default because after some tests, I found that higher speeds were not stable enough for the robot to pick and place the vials.
 
@@ -106,6 +105,14 @@ Then, the node loads the poses from the `poses.yaml` file using the `_load_poses
 
 The poses are loaded from the `poses.yaml` file. The file is located in the `config` folder of the `workshop_packaging_manager` package. The file contains the poses for the robot to move to. They are configured into a .yaml file to be able to easily modify them if needed, as each robot can slightly differ from the other. 
 
+> 💡 Tip : in the poses.yaml file, the poses are stored with the following format : 
+>```yaml
+>poses:
+>  pose_1: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+>```
+>Where the list of 6 floats represents the joint values of the robot to move to the pose.
+>At this point please implement the `_load_poses` method to load the poses from the file and return the poses as a dictionary, the poses will be defined in the next steps.
+
 As described in the schema, the node creates a `Conveyor Controller`.
 
 ```python
@@ -136,17 +143,20 @@ We also initialize the `Pick and Place Executor`, which I modified to use MoveIt
 # --- Helpers ---
 self.pick_place = PickAndPlaceExecutorMoveIt2(self, "arm")
 ```
-**For now, you will note that the methods of your classes are empty. From the instructions given by Paul-Louis, complete the missing methods to be able to reproduce the naive solution.**
+
+> 💡 Tip : The methods of the classes are empty, you will have to complete them to be able to reproduce the naive solution.
 
 The subscription leads to the execution of the `_on_digital_state` method.
 
 The IR sensor returns a boolean value, stored in the 5th index of the digital inputs table. This table is a list of boolean values, each representing the state of a digital input and published each time there is a change of at least one digital input. I decided to define the subscription to the `digital_state_topic` here as the IR sensor is plugged to the robot and not to the conveyor belt in real life. 
 
-The table is published on the `digital_state_topic` and the message is a `DigitalIOState` message type.
+The message is a `DigitalIOState` message type.
 
 The value is 1 when no object is detected, and 0 when an object is detected. Meaning we should invert it before placing it in the variable `_last_object_detected`.
 
 For this method we consider implementing a simple error handling to avoid any crash of the node, especially for the `digital_state` topic, as the index can be an invalid parameter (i.e not in the list).
+
+> 💡 Tip : You can begin by writing the method and print the result to see if it works. You can put your hand in front of the IR sensor and see if the returned value is correctly updated
 
 The `Conveyor Controller` class is responsible for controlling the conveyor belt. It is initialized with the parameters passed to the node and creates a service client to control the conveyor belt : 
 
@@ -190,6 +200,7 @@ To send the request we use the `call_async` method of the service client.
 future = self._client.call_async(req)
 rclpy.spin_until_future_complete(self._node, future)
 ```
+>💡 Tip : At this point you can also test your method by calling it from the main loop of the node, try to start and stop the conveyor belt and see if everything is working !
 
 ### Hans-Günther's Pick and Place Executor
 Following the hans-gunther's instructions, I decided to use the same implementation as him, as I wanted to be consistent with his work while I knew i would have to rework this class. 
@@ -216,6 +227,11 @@ As I wanted to be consistent with his work while using other framework to contro
 
 The only method I kept from his implementation is the `_tool_cmd` method, which is used to send a goal to the tool action server. 
 
+To declare a goal to an action we use the `Tool.Goal` object.
+```python
+goal = Tool.Goal()
+```
+The goal type is the following :
 ```python
 # Gripper
 int8 OPEN_GRIPPER = 1
@@ -253,6 +269,8 @@ With this base, we have everything to perform our application. I will now descri
 
 Note that this could be a good idea to create `_open_gripper` and `_close_gripper` methods to make the code more readable.
 
+> 💡 Tip : You can try to call the `_tool_cmd` method to open and close the gripper and see if it works.
+
 
 ### My MoveIt2 implementation
 
@@ -261,6 +279,8 @@ When I asked Niryo to give me tips about the integration of a robot, they told m
 Anyways, once I arrived here, I had to figure out how this framework worked so that no one would know that I didn't know how to use it. My first move was then to check the documentation and copy-paste the code from the official examples, which worked perfectly. I then asked chat-gpt to explain me each method I "implemented".
 
 Starting with the initialization of the MoveIt2 class, we create a MoveItPy instance, which is the main class of the moveit2 framework.
+
+> 💡 Tip: All these methods are to paste and implement in your code (packaging_node.py), Paul-Louis copied them from the official examples.
 
 ```python 
 self._group_name = group_name
@@ -333,7 +353,8 @@ On the documentation I read, they said that we had to write a configuration for 
 
 They also stated the need of creating a lauchfile for the node to work properly. I thus created the `packaging_moveit2_launch.py` file in the `launch` folder of the `workshop_packaging_manager` package.
 
-**Something went wrong here, we lost the launchfile, follow the instructions to recreate it.** 
+>💡 Tip: Something went wrong here, we lost the launchfile, follow the instructions to recreate it. Begin by creating a launchfile template in the `launch` folder of the `workshop_packaging_manager` package. You can name it packaging_moveit2_launch.py.
+
 
 Begining by importing the necessary libraries, we create the launch description.
 
@@ -349,6 +370,9 @@ from moveit_configs_utils import MoveItConfigsBuilder
 ```
 We begin by getting the URDF and the moveit configuration.
 
+>  💡 Reminder: `generate_launch_description()` is the function that is called to generate the launch description. It is a required function for any launchfile.
+
+
 ```python 
     # Get URDF file
     urdf_file = os.path.join(
@@ -359,7 +383,7 @@ We begin by getting the URDF and the moveit configuration.
 
     # Build MoveIt2 configuration
     moveit_config = (
-        MoveItConfigsBuilder("niryo_ned3pro", package_name="ned3pro_packagi ng_manager")
+        MoveItConfigsBuilder("niryo_ned3pro", package_name="ned3pro_packaging_manager")
         .robot_description(file_path=urdf_file)
         .joint_limits(file_path="config/joint_limits.yaml")
         .robot_description_semantic(file_path="config/niryo_ned3pro.srdf")
@@ -388,6 +412,8 @@ We then want to declare the launch arguments, following this pattern for the rvi
 ```
 
 Note that we have to do it for each parameter we want to be able to change from the launch file, here `conveyor_id`, `speed` and `sensor_index`, in order to fit with Hans-Gunther's implementation.
+
+> 💡 Warning: Before continuing please be sure you implemented all the required launch arguments
 
 We finally want to launch our node with al the configurations we declared : 
 
@@ -434,7 +460,7 @@ On the example, they explained the possibility to launch rviz to visualize the r
 
 ```
 
-I know that headless setup always seems more profesionnal, so as I wanted not to be seen as a noob, I decided to not use it but keep it in the launchfile for newcomers to have a better understanding of the code, if they have to work with my project in the future #helpingjuniors. 
+I know that a headless setup (no GUI) always seems more profesionnal, so as I wanted not to be seen as a noob, I decided to not use it but keep it in the launchfile for newcomers to have a better understanding of the code, if they have to work with my project in the future #helpingjuniors. 
 
 Finally, we have to publish a static transform to the base_link frame. So that Moveit can interpret the robot's position in the 3D space. 
 
@@ -464,7 +490,7 @@ return LaunchDescription([
 
 ### Testing 
 
-**For the following steps, please refer to the code in the `src/workshop/workshop_packaging_manager/scripts/packaging_node.py` file.**
+>💡 Tip: For the following steps, please refer to the code in the `src/workshop/workshop_packaging_manager/scripts/packaging_node.py` file.
 
 To test my implementation, I decided to create a simple logic to begin my main loop. 
 
@@ -474,7 +500,37 @@ If there is an object detected, we stop the conveyor belt and execute the pick s
 
 The pick sequence should be simple : go to the grip position, close the gripper, go to the place position, open the gripper and go back to the grip position.
 
-To set my grip and place positions, I used the **Freemotion** button of the niryo robot that allows you to move the robot's hand freely. I recorded the positions and stored them in the `poses.yaml` file, listening to the `joint_states` topic.
+To set my grip and place positions, I used the [Freemotion](https://docs.niryo.com/robots/ned3-pro/utilisation-du-robot/#header-three-ei5so) button of the niryo robot that allows you to move the robot's hand freely. I recorded the positions and stored them in the `poses.yaml` file, listening to the `joint_states` topic.
+
+> 💡 Tip: Fill the empty `poses.yaml` file using the same syntax that explained while creating the `_load_pose` method. You can write a simple script such as `record_pose.sh` which calls the topic once and record it in a file in the good format. 
+> Here is an example : 
+>```bash
+>#!/bin/bash
+># Record one /joint_states message and save its positions to a YAML file.
+># Usage: ./record_joint_pose.sh pose_1 my_poses.yaml
+>#        ./record_joint_pose.sh <pose_name> <output_yaml>
+>set -e
+>POSE_NAME=$1
+>OUTPUT_FILE=$2
+>if [ -z "$POSE_NAME" ] || [ -z "$OUTPUT_FILE" ]; then
+>  echo "Usage: $0 <pose_name> <output_yaml>"
+>  exit 1
+>fi
+>
+>echo "Waiting for one message on /joint_states..."
+># Get one message and extract the 'position' array
+>POSITIONS=$(ros2 topic echo /joint_states --once --no-arr | \
+>  grep "position" | head -n 1 | \
+>  sed 's/.*\[\(.*\)\].*/\1/' | tr -d ' ')
+>
+># Convert to YAML list format
+>YAML_LIST="[${POSITIONS}]"
+>
+># Write to YAML file
+>echo "${POSE_NAME}: ${YAML_LIST}" >> "${OUTPUT_FILE}"
+>
+>```
+>You should here record 2 poses, one to pick the vial, and another to place the vial, just at the top of the box.
 
 Then I used the `use_single_pipeline_planning` method to plan and execute the trajectory to the grip and place positions, using the `ompl_rrtc` planner, as it is the first one that is found in the documentation. I decided that it is not necessary to use the multi_pipeline_planning method as the first one already works fine. 
 
@@ -562,11 +618,12 @@ And I was absolutely right, the robot was able to pick and place the vials in th
 
 As we are working on industrial applications, I decided that it was better to have a productive path rather than a safe one. That's why I commented these lines in the final project.
 
-**For the naive solution, test both implementations, with and without the obstacle and report the results.**
+> 💡 Tip: For the naive solution, test both implementations, with and without the obstacle and report the results
+>Please comment the `self.pick_place.add_collision_object` in the initialization of the node to test without the collison object.
 
-´´´bash
+```bash
 ros2 launch workshop_packaging_manager packaging_moveit2_launch.py
-´´´
+```
 
 ### Nota bene
 To make the conveyor runs, you need to initialize it by calling a niryo service. You just have to call it once, not each time you run the program. 
@@ -603,7 +660,7 @@ Adding a collison object is a good idea, but it should be done in a more intelli
 
 To start, let's re-activate the collision object and the Rviz node in the launch file, real professionals don't care about being seen as noobs lol. 
 
-**If you are running the solution inside docker, be sure that you gave access to the display of the host machine. (xhost +)**
+> 💡 Tip: If you are running the solution inside docker, be sure that you gave access to the display of the host machine. (xhost +)
 
 Running the solution again we now see that the placed object is completely not relevant, and do not reprensent the real situation. Besides this random object being huge, the robot tries to reach its goal without entering in collision with it, leading to the generation of crazy trajectories : 
 
@@ -631,7 +688,11 @@ First of all, set Velocity and Acceleraition scaling factors to 1.0, to get the 
 
 Then In the context window, The OMPL RRT Planner should be selected by default. Go on the Joints section and set the Joints Values to pure zeros. Click on plan and execute. You should see that the planner create a path for the robot to follow and reach its goal. Now set the goal state at the previous state and perform the trajectories again and again. You should see that the path can slightly vary each time. And will vary even more on long trajectories or path that include obstacles. 
 
+<img src="../../assets/context_windows.png" alt="Sequences" width="50%" />
+
+
 Now on the context window, select the PILZ PTP planner. Click on plan and execute, and repeat the same procedure. You should see that the path is the same each time. 
+
 
 Now test the PILZ LIN planner. For this planner you might have to lower the acceleration and velocity scaling factors to 0.5, as linear trajectories are faster and can surpass the limits of the robot. You will notice that this planner allows you to keep your gripper in a straight line during the whole trajectory, which could be useful to ensure safety. 
 
@@ -651,7 +712,7 @@ Note that Pilz planners have a function called *sequences* that allows you to me
 
 As a bonus, you can imagine your trajectory to be a combination of PTP and LIN goals, optimized in function of your packaging strategy. This will prevent your robot from stopping at each goal, if you planned to use multiple goals to reach the dropping position.
 
-To perform such a sequence, you have to initialize a new node in your launchfile, which is called `move_group`. This node is the main moveit_2 node that kind of work as an overkill core that got all the interfaces the package can provide. It was not necessary to use it before, as we interfaced the movements using `MoveitPy`, which is a python wrapper for the `moveit_cpp` interface that allows to use Moveit2 without MoveGroup. But, as we now need to use sequences, the only way to interface it is to manage with the MoveGroup node.
+To perform such a sequence, you have to initialize a new node in your launchfile, which is called `move_group`. This node is the main moveit_2 node that kind of work as the standard node that got all the interfaces the package can provide. It was not necessary to use it before, as we interfaced the movements using `MoveitPy`, which is a python wrapper for the `moveit_cpp` interface that allows to use Moveit2 without MoveGroup. But, as we now need to use sequences, the only way to interface it is to manage with the MoveGroup node, as they are still not implemented in `moveit_cpp`
 
 ```python
     moveit2_config = (
