@@ -704,6 +704,47 @@ In the configuration file as in the script, PTP is not configured yet, so you wi
 
 **Third mission, try to use the PTP planner and report the results, Note that you can get inspired by the LIN implementation and that it would be a good idea to limit the velocity and acceleration scaling factors, so that the planner can follow the constraints of the robot.**
 
+
+
+
+### Comments from the integration team 
+
+The integration team think that we cannot call this implementation a "packaging line" as it just drops the vials into the box, without any organization. 
+
+We would validade the approach only if it leads to an  organized placement of the vials in the box. 
+
+The first think to know is that we will rather use poses and orientations to describe the robot's position in the 3D space, than joint values. You can record the poses using the freemotion button of the robot and listening to the /niryo_robot/robot_state topic.
+
+In integration we use 2 differents approaches : 
+
+The first one consists in recording poses of the 4 corners of the box, and then divide the lenght by the size of a vial to get the number of vials that can be placed in the box, and thus create an algorithm that add this size to the initial pose to get the next pose.
+
+example for a complete row: 
+
+```python 
+initial_pose = (x=0.0, y=0.0, z=0.0, rx=0.0, ry=0.0, rz=0.0, rw=0.0)
+
+for i in range(number_of_vials):
+    next_pose = (x=initial_pose.x + size_of_a_vial, y=initial_pose.y, z=initial_pose.z, rx=initial_pose.rx, ry=initial_pose.ry, rz=initial_pose.rz, rw=initial_pose.rw)
+    initial_pose = next_pose
+    move_to_pose(next_pose)
+
+row = row + 1
+initial_pose = (x=0.0, y=row * size_of_a_vial, z=0.0, rx=0.0, ry=0.0, rz=0.0, rw=0.0)
+```
+This approach is easy to implement and can be adapted to any size of box and any size of vial, nevertheless, it is not the most efficient way to place the vials in the box, as it leads to some empty spaces between the vials or to some vials being placed on the top of other vials.
+
+**Try this approach and report the results.**
+
+The second approach is to use hardware to incline the box, allowing the vials to roll down and fill the box. This is the most efficient way to place the vials in the box, as it leads to no empty spaces between the vials and no vials being placed on the top of other vials. This allows the code to be simplified, as we don't have to deal with rows, but require hardware modifications to the initial setup as we want to use gravity. 
+
+**Try this approach and report the results.**
+
+
+## Bonus
+
+Hey Pierre's talking, I just infiltrated Paul-Louis's report ! I just wanted you to know that the other part of your team read Hans-Gunther's report and got completely different feedbacks ! One told me that they still use Niryo's classic python API, meaning that the robot is not working at full speed ! Would you mind checking if you can implement this feature in their code ? I think it would be a great improvement for the project !
+
 Now you can ignore the collision object, as deterministic planners are not able to avoid collisions. But this time record a slightly higher drop position, using PTP or LIN as a pipeline you should now have a stable pick and place sequence. 
 
 Note that Pilz planners have a function called *sequences* that allows you to merge several trajectories into one, meaning you can combine PTP and LIN trajectories, to reach multiples goals without stopping. The goals are intentionally not completely reach according to a certain `bend_radius`, which allows the whole trajectory to be smoother.
@@ -764,45 +805,4 @@ if not goal_handle.accepted:
     self._node.get_logger().error("command rejected")
     return
 ```
-
-
-
-### Comments from the integration team 
-
-The integration team think that we cannot call this implementation a "packaging line" as it just drops the vials into the box, without any organization. 
-
-We would validade the approach only if it leads to an  organized placement of the vials in the box. 
-
-The first think to know is that we will rather use poses and orientations to describe the robot's position in the 3D space, than joint values. You can record the poses using the freemotion button of the robot and listening to the /niryo_robot/robot_state topic.
-
-In integration we use 2 differents approaches : 
-
-The first one consists in recording poses of the 4 corners of the box, and then divide the lenght by the size of a vial to get the number of vials that can be placed in the box, and thus create an algorithm that add this size to the initial pose to get the next pose.
-
-example for a complete row: 
-
-```python 
-initial_pose = (x=0.0, y=0.0, z=0.0, rx=0.0, ry=0.0, rz=0.0, rw=0.0)
-
-for i in range(number_of_vials):
-    next_pose = (x=initial_pose.x + size_of_a_vial, y=initial_pose.y, z=initial_pose.z, rx=initial_pose.rx, ry=initial_pose.ry, rz=initial_pose.rz, rw=initial_pose.rw)
-    initial_pose = next_pose
-    move_to_pose(next_pose)
-
-row = row + 1
-initial_pose = (x=0.0, y=row * size_of_a_vial, z=0.0, rx=0.0, ry=0.0, rz=0.0, rw=0.0)
-```
-This approach is easy to implement and can be adapted to any size of box and any size of vial, nevertheless, it is not the most efficient way to place the vials in the box, as it leads to some empty spaces between the vials or to some vials being placed on the top of other vials.
-
-**Try this approach and report the results.**
-
-The second approach is to use hardware to incline the box, allowing the vials to roll down and fill the box. This is the most efficient way to place the vials in the box, as it leads to no empty spaces between the vials and no vials being placed on the top of other vials. This allows the code to be simplified, as we don't have to deal with rows, but require hardware modifications to the initial setup as we want to use gravity. 
-
-**Try this approach and report the results.**
-
-
-## Bonus
-
-Hey Pierre's talking, I just infiltrated Paul-Louis's report ! I just wanted you to know that the other part of your team read Hans-Gunther's report and got completely different feedbacks ! One told me that they still use Niryo's classic python API, meaning that the robot is not working at full speed ! Would you mind checking if you can implement this feature in their code ? I think it would be a great improvement for the project !
-
 
