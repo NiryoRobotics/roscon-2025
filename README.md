@@ -308,6 +308,10 @@ In this workshop, you'll step into the role of these interns by reading their de
 
 Two students worked on this project, each tackling a different part of the production line. Choose your path based on what you want to learn!
 
+### Disclaimer
+
+At this point you will read the reports of the interns, the tone of the reports is not always serious and is meant to be funny, all the characters are fictive and the story is meant to be engaging. 
+
 ---
 
 ### Paul-Louis Chardonnay
