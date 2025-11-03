@@ -34,6 +34,8 @@ Edit your `~/.bashrc` file (located at `~/.bashrc` locally or `/root/.bashrc` in
     
 ## My Solution
 
+> 💡 Hey ! I'm the narrator, I'll be guiding you sometimes to help you test the code. To begin with Hans-Gunter's solution let's open the `quality_check_node.py` file in the `/roscon-2025/workshop/workshop_quality_check_manager/scripts/quality_check_node.py` directory at the side of this document for the robot side and the `detection.py` file of the `workshop_rpi_manager` package for the raspberry side. The report is written by Hans-Günther as "I". Please read it and complete the missing methods when he explained how he did it. 
+
 ### Robot side
 On the robot side we provide a ROS2 package that handles the robot's task, starting with a pick and place action when an object is detected by the IR sensor, from the conveyor belt to the testing zone. Once the safety state of the vial is received fom the raspberry, the robot will move to the packaging line to place the vial if it's safe, or to the reject zone if it's unsafe.
 
@@ -48,7 +50,7 @@ flowchart TD;
     B -->|"Controls"| F["Conveyor belt speed **Service Client**"];
     G["IR SENSOR **Topic**"] -->|"Sends data"| A;
 ```
-**For the following steps, please refer to the code in the `src/workshop/workshop_quality_check_manager/scripts/quality_check_node.py` file.**
+
 
 Starting with the main Class, the `Quality Check Node`. 
 
@@ -103,6 +105,14 @@ poses = poses_file.get("poses", {})
 
 The poses are loaded from the `poses.yaml` file. The file is located in the `config` folder of the `workshop_quality_check_manager` package. The file contains the poses for the robot to move to. They are configured into a .yaml file to be able to easily modify them if needed, as each robot can slightly differ from the other.
 
+> 💡 Tip : in the poses.yaml file, the poses are stored with the following format : 
+>```yaml
+>poses:
+>  pose_1: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+>```
+>Where the list of 6 floats represents the joint values of the robot to move to the pose.
+
+
 As described in the schema, the node creates a `Conveyor Controller` and a `Pick and Place Executor`. It distributes the corresponding parameters to the two classes.
 
 ```python
@@ -129,13 +139,14 @@ self.create_subscription(String, "/safety_state", self._on_safety_state, 10)
 ```
 We also introduce a QoS Profile to ensure that the messages from the IR sensor are never lost if a new object is detected. We chose the RELIABLE policy to prevent any loss of data and ensure maximum safety. We also keep the last 10 messages in memory to avoid any loss of data and use the last messages to be stored to be up to date at each time. Remember : always put safety first !
 
-**For now, you will note that the methods of your classes are empty. From the instructions given by Hans-Günther, complete the missing methods to be able to reproduce the naive solution.**
+
+> 💡 Tip: For now, you will note that the methods of your classes are empty. From the instructions given by Hans-Günther, complete the missing methods to be able to reproduce the naive solution.
 
 Both subscriptions lead to the executions of the respectives methods `_on_digital_state` and `_on_safety_state`.
 
 The IR sensor returns a boolean value, stored in the 5th index of the digital inputs table. This table is a list of boolean values, each representing the state of a digital input and published each time there is a change of at least one digital input. I decided to define the subscription to the `digital_state_topic` here as the IR sensor is plugged to the robot and not to the conveyor belt in real life. 
 
-The table is published on the `digital_state_topic` and the message is a `DigitalIOState` message type.
+The message is a `DigitalIOState` message type.
 
 The value is 1 when no object is detected, and 0 when an object is detected. Meaning we should invert it before placing it in the variable `_last_object_detected`.
 
@@ -143,6 +154,7 @@ The safety state is a string value. It is published on the `safety_state` topic 
 
 For these two methods, we consider implementing a simple error handling to avoid any crash of the node, especially for the `digital_state` topic, as the index can be an invalid parameter (i.e not in the list).
 
+> 💡 Tip : You can begin by writing the method and print the result to see if it works. You can put your hand in front of the IR sensor and see if the returned value is correctly updated. For the `_on_safety_state` method, you can publish a string in a terminal using a `ros2 topic pub` command to see if it is correctly recieved by your code
 
 The `ConveyorController` class is responsible for controlling the conveyor belt. It is initialized with the parameters passed to the node and creates a service client to control the conveyor belt : 
 
@@ -186,6 +198,10 @@ To send the request we use the `call_async` method of the service client.
 future = self._client.call_async(req)
 rclpy.spin_until_future_complete(self._node, future)
 ```
+
+>💡 Tip : At this point you can also test your method by calling it from the main loop of the node, try to start and stop the conveyor belt and see if everything is working !
+
+
 The `PickAndPlaceExecutor` class is responsible for controlling the robot's task. It is initialized with the parameters passed to the node and creates two action clients to control the robot's and tool's movements.
 
 ```python
@@ -198,6 +214,14 @@ The `PickAndPlaceExecutor` class is responsible for controlling the robot's task
 ```
 
 In this class, I implemented 2 methods, each responsible for the control of the robot's and tool's movements. They are called `_move` and `_tool_cmd` and send a goal to the respectives action servers.
+
+Note that we can instatiate a goal using in each method 
+
+```python 
+    goal = RobotMove.Goal()
+    goal = Tool.Goal()
+```
+
 
 Here is the goal type to control the robot's movements :
 
@@ -273,6 +297,8 @@ To set a goal to an action we use the `send_goal_async` method of the action cli
 
 ```
 
+> 💡 Tip: At this point test your movement implementation by tyring to make your robot move from a random pose to a basic joint position and to open and close the gripper. 
+
 With this base, we have everything to perform our application. I will now describe the path I followed to implement my solution. 
 
 In my head, I like to have everything clear, separated and easy to understand. I thus, divided the work into bricks that make a chain of actions. Here is the diagram that explain the path of resolution for the application. 
@@ -300,17 +326,46 @@ Now here comes the fun part. We need to perform the pick and place operation. As
 
 I am a very precautionnary person, so I used all my mind to engineer the safest path for the robot to perform this operation. A good thing to know with Niryo robots is that you can use the `freemotion` button, located on the robot's forearm, to move the robot's hand freely. This is very useful to take positions in real life and reproduce them in the code. I stored all these position as joint states in the `poses.yaml` file. To record the positions I listened to the `joint_states` topic..
 
+
 For the first phase, I took 4 positions to perform the pick and place. The first one is the `grip` position where the robot hand is opened and ready to recieve a vial. Then I want the robot to close the gripper and slowly move in a vertical line to raise the vial to an upper position called `high1`. Then, the robot turns to its left to the `high2` position making a circle trajectory until the vial is just above the test zone. And then we perform a vertical straight line to the `low1` position where the robot opens the gripper and slowly moves back to the `high2` position to safely leave the camera field of view.
+
+> 💡 Tip: Fill the empty `poses.yaml` file using the same syntax that explained while loading the poses. You can write a simple script such as `record_pose.sh` which calls the topic once and record it in a file in the good format. 
+> Here is an example : 
+>```bash
+>#!/bin/bash
+># Record one /joint_states message and save its positions to a YAML file.
+># Usage: ./record_joint_pose.sh pose_1 my_poses.yaml
+>#        ./record_joint_pose.sh <pose_name> <output_yaml>
+>set -e
+>POSE_NAME=$1
+>OUTPUT_FILE=$2
+>if [ -z "$POSE_NAME" ] || [ -z "$OUTPUT_FILE" ]; then
+>  echo "Usage: $0 <pose_name> <output_yaml>"
+>  exit 1
+>fi
+>
+>echo "Waiting for one message on /joint_states..."
+># Get one message and extract the 'position' array
+>POSITIONS=$(ros2 topic echo /joint_states --once --no-arr | \
+>  grep "position" | head -n 1 | \
+>  sed 's/.*\[\(.*\)\].*/\1/' | tr -d ' ')
+>
+># Convert to YAML list format
+>YAML_LIST="[${POSITIONS}]"
+>
+># Write to YAML file
+>echo "${POSE_NAME}: ${YAML_LIST}" >> "${OUTPUT_FILE}"
+>
+>```
+>You should here record 4 poses, as explained in the report
 
 When the safety response is received, we go back to the `low1` position, grab the vial and move to the `safe` or `unsafe` position depending on the safety state passing by the `high2` position to ensure maximum safety. 
 
 When the second pick and place is performed, we return to the `grip` position to wait for the next object, obviously passing back by the `high2` and `high1` positions to ensure maximum safety, as we want the robot to arrive in a straight line to the conveyor belt before setting it back to run and reseting the `last_object_detected` variable because **safety first**, we never know !
 
-**For now, follow the instructions given by Hans-Günther to complete the missing run loop. Fill the poses.yaml file with the positions you took. You can create some methods on the pick and place executor to perform the two phases and make the code more readable.**
-
-**The correction for the Naive solution is in the `src/ned3pro_quality_check_manager/scripts/quality_check_node_naive.py` file.**
 
 
+> 💡 Tip: For now, follow the instructions given by Hans-Günther to complete the missing run loop. Fill the poses.yaml file with the positions you took. You can create some methods on the pick and place executor to perform the two phases and make the code more readable. The correction for the Naive solution is in the `/ned3pro_quality_check_manager/scripts/quality_check_node_naive.py` file.
 
 ### Raspberry side
 
@@ -356,6 +411,7 @@ To perform the quality check, I created a script into the raspberry pi manager p
         self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 10)
 
 ```
+>💡 Tip: Go to the Raspberry Pi and open the `rpi_manager/scripts/detection.py` to continue the workshop. Complete the solution as explained by Hans-Günther.
 
 Then I asked myself, How can the quality check can be performed on the raspberry pi, and then be sent to the Robot's Node ? What a tricky question for my mind, but I found out and remembereed that we were using ROS2. Even if I do not know a lot about ROS2, i know that main part of the communication is done through topics. So I created a publisher to the `quality_check/safety_state` topic to publish the safety state, and attached a timer to publish the safety state. I wanted to have the best performances possible, so I measured the mean time for the robot to perform a trajectory and I find out it was approximatively 5 seconds. I thus set the timer to 5 seconds to ensure that the safety state is published at the right time, i.e when the robot performed its full trajectory. 
 
@@ -386,13 +442,15 @@ At this time I remembered I have to publish the image to the `rpi_manager/frame`
     self.image_publisher.publish(image_msg)
 ```
 
+> 💡 Tip: Implement the missing methods following the steps explained before.
+
 I know that inference run on a CPU is not the best idea, as it can be very slow. I had an idea which was to process the image before sending to the model, so that it can be more lightweight, while fitting the model's dataset. A human brain has around 10 Billion neurons, while ChatGPT has around 175 Billion neurons. So I decided to prompt ChatGPT to adress the most optmized filters to apply to the image to fit the model's dataset while being as performative as possible. 
 
 This is the prompt I used : 
 
 *Give me the code in python to process an image that merges red and blue in one mask and the rest in another one. Put the other one to a gray scale and optimize my image so that I have the best performances possible.*
 
-It directly returned the code, so I pasted it in my script and it compiled ! 
+It directly returned the code, so I pasted it in my script and it got built ! 
 
 ```python
     filtered_image = self._apply_performative_filters(frame)
@@ -458,6 +516,8 @@ msg = String()
 msg.data = safety_state
 self.publisher_.publish(msg)
 ```
+
+> 💡 Tip: you can test your code by listening to the `safety_state` topic, something should be published every 5 seconds as a string. 
 
 Note that I was not able to see the parameters applied to the camera on the HMI. I thought that maybe human eye cannot make the difference between processed and unprocessed image as GPT, which I think is not human, decided on the parameters. But I 100% trust GPT as it has more neurons than me. 
 
@@ -572,11 +632,12 @@ if __name__ == "__main__":
 
 These two basic nodes are now able to run in parallel, each one in its own thread.
 
-Another important concept about MultiThreadedExecutor is that by default the callbacks are executed sperately and wait for each other. This is because a default callback is a Mutually Exclusive Callback Group, meaning that only one callback can be executed at a time.  Declaring a `ReentrantCallbackGroup` will allow the callbacks to be executed in parallel. In a Reentrant Callback Group, the callbacks are executed each time the timer call them, meaning they are not waiting for any other callback to be executed. Please consider building your new architecture with this concept in mind.
+Another important concept about MultiThreadedExecutor is that by default the callbacks are executed sperately and wait for each other. This is because a default callback is a Mutually Exclusive Callback Group, meaning that only one callback can be executed at a time, this is not the excepted behavior for our application as we want the conveyor and the robot to work in parallel.  
+Declaring a `ReentrantCallbackGroup` will allow the callbacks to be executed in parallel. In a Reentrant Callback Group, the callbacks are executed each time the timer call them, meaning they are not waiting for any other callback to be executed. Please consider building your new architecture with this concept in mind.
 
 Note that the main challenge of transforming your code to this new architecture will be to avoid **deadlocks**. Deadlocks are a situation where two or more threads are waiting for each other to release a resource, causing a deadlock. It is very common to have deadlocks in a multi-threaded architecture, especially when creating action clients and service clients. 
 
-In the previous code, you used the `rclpy.spin_until_future_complete` function to wait for the future to be completed. This function is not thread-safe and will cause a deadlock. Indeed, the executor is already spinning, and calling this function will cause the executor to spin again, waiting for an answer that should come in this exact same thread, that is block waiting for itself. What a tricky situation !
+In the previous code, you used the `rclpy.spin_until_future_complete` function to wait for the future to be completed. This function is not thread-safe and will cause a deadlock. Indeed, the executor is already spinning, and calling this function will cause the executor to spin again, waiting for an answer that should come in this exact same thread, that is block waiting for itself as it is trying to access a ressource that is not already released. What a tricky situation !
 
 One strategy to avoid this is to use the `add_done_callback` method of the future, to add a callback that will be executed when the future is completed. This callback should not be executed in the same thread as the one calling the `add_done_callback` method, avoiding the deadlock, freeing the thread from the waiting loop.
 
