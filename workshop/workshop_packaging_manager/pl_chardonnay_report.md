@@ -34,6 +34,8 @@ Edit your `~/.bashrc` file (located at `~/.bashrc` locally or `/root/.bashrc` in
 
 ## My Solution
 
+> 💡 Hey ! I'm the narrator, I'll be guiding you sometimes to help you test the code. To begin with Paul-Louis' solution let's open the `packaging_node.py` file in the `/roscon-2025/workshop/workshop_packaging_manager/scripts/packaging_node.py` directory at the side of this document. The report is written by Paul-Louis as "I". Please read it and complete the missing methods when he explained how he did it. 
+
 ### Architecture 
 When I arrived at work, approximatly at 11 AM, my german mate who was already there since 7 AM stated that he already thought about an architecture for its side of the solution. One of the thing I learnt in engineering school is that consistency is key, hence, I decided to use the same architecture for my side of the solution. 
 
