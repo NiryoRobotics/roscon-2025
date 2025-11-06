@@ -324,7 +324,7 @@ If an object is detected, we call our `set_running` method from the conveyor con
 
 Now here comes the fun part. We need to perform the pick and place operation. As previously stated, I decided to split the operation into two phases. The first pick and place the vial to the test zone, then leave the camera field of view. And the second phase is to pick the vial from the test zone to the packaging conveyor, or to the bin if it's unsafe and then return safely to the pick zone.
 
-I am a very precautionnary person, so I used all my mind to engineer the safest path for the robot to perform this operation. A good thing to know with Niryo robots is that you can use the `freemotion` button, located on the robot's forearm, to move the robot's hand freely. This is very useful to take positions in real life and reproduce them in the code. I stored all these position as joint states in the `poses.yaml` file. To record the positions I listened to the `joint_states` topic..
+I am a very precautionnary person, so I used all my mind to engineer the safest path for the robot to perform this operation. A good thing to know with Niryo robots is that you can use the [Freemotion](https://docs.niryo.com/robots/ned3-pro/utilisation-du-robot/#header-three-ei5so) button, located on the robot's forearm, to move the robot's hand freely. This is very useful to take positions in real life and reproduce them in the code. I stored all these position as joint states in the `poses.yaml` file. To record the positions I listened to the `joint_states` topic..
 
 
 For the first phase, I took 4 positions to perform the pick and place. The first one is the `grip` position where the robot hand is opened and ready to recieve a vial. Then I want the robot to close the gripper and slowly move in a vertical line to raise the vial to an upper position called `high1`. Then, the robot turns to its left to the `high2` position making a circle trajectory until the vial is just above the test zone. And then we perform a vertical straight line to the `low1` position where the robot opens the gripper and slowly moves back to the `high2` position to safely leave the camera field of view.
@@ -373,14 +373,14 @@ The client had some requirements about performances. That's why they asked us to
 
 `hmi_standard.py`
 
-This HMI uses PyQt5, a python library for creating GUI applications. It is also compatible with ROS2 and subscribes by default to the `quality_check/safety_state` topic and the `rpi_manager/frame` topic, which is supposed to be the image taken by the camera.
+This HMI uses a web interface. It is also compatible with ROS2 and subscribes by default to the `quality_check/safety_state` topic and the `rpi_manager/frame` topic, which is supposed to be the image taken by the camera.
 
 
 It displays : The overall state of the system, the image taken by the camera, the latest safety state detected, the numbers of objects taken in charge today and the proportionality of them being unsafe. It also calculates the average time to perform a pick and place operation.
 
 The website stated all these functionalities, but I think I only downloaded the demo version, as some of the functionalities were not available.
 
-Another function of the Raspberry pi was to perform the quality check itself. To perform that, we have a testing zone where a vial is placed by the QC robot. I was given a pre-trained YOLO v8 model to detect the safety state of the vial. The model is trained to detect the safety state of the vial, meaning that it can detect if the vial is safe or unsafe. I was also given this link : https://universe.roboflow.com/louloups-sign/safety_check-zdmjr/browse?queryText=&pageSize=50&startingIndex=0&browseQuery=true which shows the dataset on which the model was trained.
+Another function of the Raspberry pi was to perform the quality check itself. To perform that, we have a testing zone where a vial is placed by the QC robot. I was given a pre-trained YOLO v8 model to detect the safety state of the vial. The model is trained to detect the safety state of the vial, meaning that it can detect if the vial is safe or unsafe. I was also given this [link](https://universe.roboflow.com/louloups-sign/safety_check-zdmjr/browse?queryText=&pageSize=50&startingIndex=0&browseQuery=true) which shows the dataset on which the model was trained.
 
 To perform the quality check, I created a script into the raspberry pi manager package. This script is called `detection.py`. It has a main class that is called `DetectionNode`. It is initialized with the model path, the camera index and the topic name to publish the safety state. It also loads the AI model that is based on YOLO v8. 
 
@@ -550,6 +550,94 @@ The main problem of your implementation concerns the logic of the quality check.
 Secondly, you decided to publish the safety state on a topic every 5 seconds. Because that's the median time to perform a trajectory in your operation. This is not a good idea because what if the image is not taken at the right time ? Imagine a case where the image is taken without a vial, the last safety state would be randomly chosen.
 
 To solve that we recommand to use a service to get the safety state. This service should be called each time the robot is in the test zone and the safety state should be returned.
+
+Besides, by watching the model you were given, one can clearly see that it has a lot of **overfit**, caused by the lack of diversity of the [dataset](https://universe.roboflow.com/louloups-sign/safety_check-zdmjr/browse?queryText=&pageSize=50&startingIndex=0&browseQuery=true) it was trained on. This leads to the model to perform correctly the classification only if the data is taken on the same conditions than the dataset, which is clearly not the case here. Moreover, the model being a classification policy does not provide the possibility to detect if an object is on the image (i.e. the image will always return a safety check even if nothing is detected on the image). In this case, it seems interesting to switch to a classification model, that will return if a class is detected (here a vial) and its safety check. This will complete the role of the service call, making sure an object is detected before returning something. You can publish the detection of an object using the `quality_check/object_detected` (std::bool) topic. 
+
+To solve problems that comes from the model, we propose that you re-train a new YOLO model with the data of the laboratory. 
+
+>💡 Tip : To train a new AI vision based model, we can fine-tune a YOLO model. To perform that, we recommand using [Roboflow](https://roboflow.com/), you can begin by creating an account. Click on "create new project" and you should land on this page. 
+
+> <img src="../../assets/roboflow.png" alt="Roboflow New project" width="100%" />
+
+> Here select an "Object Detection" type model, which corresponds to a segmentation model. If you still want to use a classification model, select the type below. 
+
+> The next step is to take photos to construct your dataset. You will need ~50 photos per class (safe or unsafe) to construct a dataset solid enough for this application. The main goal is to avoid the overfit. As you can see, we provided you tools to unmount the canera from its support, this is exactly what you will need to diversify your dataset. Unlike the one provided, you have to take photos in different positions and angles of the vials. To take 50 photos in a row, using the same color filter than them, you can write a little python script. For instance the script `capture_img.py` located into the assets folder takes for you the 50 photos, each second, with the correct colour filter if you run it with :
+
+>```bash
+>python capture_img.py <name_of_the_class>
+>```
+
+> Upload your directory on Roboflow, directly on the "Upload Data" section. Then go on annotate and start a batch. Annotate drawing squares around the vials and naming them `safe` or `unsafe`
+
+> <img src="../../assets/blue_vial.png" alt="Annotate blue vial" width="100%" />
+
+> Add the images of both red and blue vials to the dataset and then go to the "Versions" section. Give a name to this version, do not apply preprocessing steps but you can augmentate your data by appliying filters, this will allow your dataset to be biogger with only 50 "real" pictures : 
+
+> <img src="../../assets/augmentation.png" alt="Augentate dataset" width="100%" />
+
+> Any of these steps are a good idea to apply except colour filters that may make the model hesitate between red and blue. 
+
+> Once your version is ready, click on download dataset and make sure you have `Yolo v8` and `Show download code` selected.
+
+> <img src="../../assets/download_code.png" alt="Augentate dataset" width="100%" />
+
+> You should see some lines of python code, it means it's now time for training ! To train your own model, we recommand to use this [Google Colab](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/train-yolov8-object-detection-on-custom-dataset.ipynb)
+
+> Replace the Step 5 with your code and execute the colab. At the end you will be able to perform the evaluation and validation of your model. Your model will be located at `/runs/detect/train/weights/best.pt` on Google Colab. Please download it and place it into the assets folder and correct the path and adjust the code for segmentation in the detection node. 
+
+>Example code : 
+
+> ```python
+>def _get_safety_prediction(self, filtered_image):
+>    """Use the YOLO segmentation model to predict and analyze safe/unsafe regions"""
+>    if self.model is None:
+>        self.get_logger().warn("Model not available, returning unsafe by default")
+>        return "unsafe"
+>    
+>    try:
+>        # Run the YOLO segmentation model
+>        results = self.model.predict(filtered_image, verbose=False)
+>        
+>        if not results or results[0].masks is None:
+>            self.get_logger().warn("No segmentation mask detected")
+>            return "unsafe"
+>        
+>        # Extract segmentation information
+>        boxes = results[0].boxes
+>        masks = results[0].masks
+>        names = self.model.names
+>        
+>        safe_detected = False
+>        unsafe_detected = False
+>        
+>        for i, box in enumerate(boxes):
+>            class_id = int(box.cls[0])
+>            label = names[class_id].lower()
+>            conf = float(box.conf[0])
+>            
+>            self.get_logger().info(f"Detected {label} (conf: {conf:.2f})")
+>            
+>            if label == "unsafe":
+>                unsafe_detected = True
+>            elif label == "safe":
+>                safe_detected = True
+>        
+>        # Decision logic — prioritize unsafe
+>        if unsafe_detected:
+>            return "unsafe"
+>        elif safe_detected:
+>            return "safe"
+>        else:
+>            return "unsafe"
+>            
+>    except Exception as e:
+>        self.get_logger().error(f"Error during segmentation prediction: {e}")
+>        return "unsafe"
+>```
+
+
+
+
 
 ### Code Quality
 

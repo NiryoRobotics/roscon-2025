@@ -109,8 +109,9 @@ This is the fastest and easiest option. The image is already built and ready to 
    cd roscon-2025
    ```
 
-2. Open in VS Code:
+2. Open in VS Code with the rights to access your display:
    ```bash
+   xhost +
    code .
    ```
 
@@ -149,6 +150,7 @@ If you prefer to build the image yourself or need to customize the Dockerfile:
 
 3. Open in VS Code and start the devcontainer:
    ```bash
+   xhost +
    code .
    ```
    - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
@@ -253,7 +255,7 @@ Edit the driver configuration file to add your robot's IP address:
 ~/niryo_workshop/src/ned-ros2-driver/niryo_ned_ros2_driver/config/drivers_list.yaml
 ```
 
-Open this file and add the IP address of your robot's Ethernet interface (check the label on your robot or table).
+Open this file and add the IP address of your robot's Ethernet interface (check the label on your robot or table). Please do NOT give a namespace to your robot, this could results to imcopatibility with the code.
 
 **Example configuration:**
 
