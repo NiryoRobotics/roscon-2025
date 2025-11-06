@@ -59,13 +59,13 @@ The factory has two critical production lines:
 
 - **MoveIt 2 Motion Planning** - Implement pick-and-place operations with industrial robots
 - **Real-World Integration** - Work with conveyor belts, IR sensors, and cameras
-- **Code Optimization** - Improve "naive" solutions based on industry feedback
+- **Code Optimization** - Improve "intern" solutions based on industry feedback
 - **Collaborative Robotics** - Coordinate between quality check and packaging systems
 
 ### Workshop Structure
 
 1. **Setup** - Configure your environment and connect to hardware
-2. **Reproduce the Naive Solution** - Follow intern reports to build a working system
+2. **Reproduce the intern Solution** - Follow intern reports to build a working system
 3. **Analyze & Improve** - Apply professor feedback to optimize performance
 4. **Bonus Challenges** (optional) - Add your own improvements and exceed requirements
 
@@ -301,7 +301,7 @@ In this workshop, you'll step into the role of these interns by reading their de
 
 **The Workshop Flow:**
 
-1. **Reproduce the "Naive Solution"** - Follow the interns' reports to recreate their working but imperfect implementations
+1. **Reproduce the "intern Solution"** - Follow the interns' reports to recreate their working but imperfect implementations
 2. **Read the Feedback** - Study the professor's and Niryo team's comments on how to improve the solutions
 3. **Enhance the System** - Apply the suggested improvements to meet the company's performance requirements
 4. **Bonus Challenges** - Go beyond the feedback and add your own creative optimizations
@@ -375,19 +375,19 @@ Each report contains:
 1. **Network Configuration** - How to configure your ROS_DOMAIN_ID for your hardware cell
 2. **Architecture Overview** - Understanding the system design
 3. **Implementation Steps** - Detailed code walkthrough
-4. **Running the Naive Solution** - Launch commands and testing procedures
-5. **Professor/Niryo Team Feedback** - Suggestions for improvements (read this after you get the naive solution working!)
+4. **Running the intern Solution** - Launch commands and testing procedures
+5. **Professor/Niryo Team Feedback** - Suggestions for improvements (read this after you get the intern solution working!)
 
 ### 4. Work Through the Workshop Phases
 
-**Phase 1: Reproduce the Naive Solution**
+**Phase 1: Reproduce the intern Solution**
 - Navigate to the corresponding package in the `workshop/` folder
 - Follow the step-by-step instructions in your intern's report
 - Get their basic implementation running on the hardware
 
 **Phase 2: Analyze and Improve**
 - Read the feedback section at the end of the report
-- Identify inefficiencies and bottlenecks in the naive implementation
+- Identify inefficiencies and bottlenecks in the intern implementation
 - Apply the suggested improvements to optimize performance
 - Test your enhanced solution
 

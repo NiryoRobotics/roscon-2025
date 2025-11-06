@@ -10,7 +10,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 
 install(
   PROGRAMS
-    scripts/detection_naive.py
+    scripts/detection_intern.py
     scripts/detection.py
     scripts/detection_test.py
     scripts/hmi_standard.py

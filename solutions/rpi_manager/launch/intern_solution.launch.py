@@ -7,7 +7,7 @@ from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
-    """Generate launch description for naive solution with detection_naive and hmi_standard."""
+    """Generate launch description for intern solution with detection_intern and hmi_standard."""
     
     # Declare launch arguments
     log_level_arg = DeclareLaunchArgument(
@@ -16,11 +16,11 @@ def generate_launch_description():
         description="Log level for ROS2 nodes",
     )
     
-    # Detection naive node
-    detection_naive_node = Node(
+    # Detection intern node
+    detection_intern_node = Node(
         package="rpi_manager",
-        executable="detection_naive.py",
-        name="detection_naive",
+        executable="detection_intern.py",
+        name="detection_intern",
         output="screen",
         arguments=["--ros-args", "--log-level", LaunchConfiguration("log_level")],
         parameters=[
@@ -49,6 +49,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         log_level_arg,
-        detection_naive_node,
+        detection_intern_node,
         hmi_standard_node,
     ])

@@ -140,7 +140,7 @@ self.create_subscription(String, "/safety_state", self._on_safety_state, 10)
 We also introduce a QoS Profile to ensure that the messages from the IR sensor are never lost if a new object is detected. We chose the RELIABLE policy to prevent any loss of data and ensure maximum safety. We also keep the last 10 messages in memory to avoid any loss of data and use the last messages to be stored to be up to date at each time. Remember : always put safety first !
 
 
-> 💡 Tip: For now, you will note that the methods of your classes are empty. From the instructions given by Hans-Günther, complete the missing methods to be able to reproduce the naive solution.
+> 💡 Tip: For now, you will note that the methods of your classes are empty. From the instructions given by Hans-Günther, complete the missing methods to be able to reproduce the intern solution.
 
 Both subscriptions lead to the executions of the respectives methods `_on_digital_state` and `_on_safety_state`.
 
@@ -365,7 +365,7 @@ When the second pick and place is performed, we return to the `grip` position to
 
 
 
-> 💡 Tip: For now, follow the instructions given by Hans-Günther to complete the missing run loop. Fill the poses.yaml file with the positions you took. You can create some methods on the pick and place executor to perform the two phases and make the code more readable. The correction for the Naive solution is in the `/ned3pro_quality_check_manager/scripts/quality_check_node_naive.py` file.
+> 💡 Tip: For now, follow the instructions given by Hans-Günther to complete the missing run loop. Fill the poses.yaml file with the positions you took. You can create some methods on the pick and place executor to perform the two phases and make the code more readable. The correction for the intern solution is in the `/ned3pro_quality_check_manager/scripts/quality_check_node_intern.py` file.
 
 ### Raspberry side
 

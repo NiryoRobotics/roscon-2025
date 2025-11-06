@@ -10,10 +10,10 @@ from ultralytics import YOLO
 import os
 
 
-class DetectionNaiveNode(Node):
+class DetectioninternNode(Node):
     def __init__(self) -> None:
-        super().__init__('detection_naive')
-        self.get_logger().info('detection_naive node initialised')
+        super().__init__('detection_intern')
+        self.get_logger().info('detection_intern node initialised')
         
         # Initialize CV bridge for image conversion
         self.bridge = CvBridge()
@@ -48,7 +48,7 @@ class DetectionNaiveNode(Node):
         self.timer_ = self.create_timer(5.0, self._on_timer)
 
     def _apply_performative_filters(self, frame):
-        # Reduce to 144p resolution (naive approach)
+        # Reduce to 144p resolution (intern approach)
         performative_filters = cv2.resize(frame, (256, 144), interpolation=cv2.INTER_NEAREST)
         
         hsv = cv2.cvtColor(performative_filters, cv2.COLOR_BGR2HSV)
@@ -153,7 +153,7 @@ class DetectionNaiveNode(Node):
 
 def main(args=None) -> None:
     rclpy.init(args=args)
-    node = DetectionNaiveNode()
+    node = DetectioninternNode()
     try:
         rclpy.spin(node)
     finally:

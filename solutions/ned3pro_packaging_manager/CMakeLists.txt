@@ -20,7 +20,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
   install(
     PROGRAMS
       scripts/packaging_node.py
-      scripts/packaging_node_naive.py
+      scripts/packaging_node_intern.py
     DESTINATION lib/${PROJECT_NAME}
   )
 endif()

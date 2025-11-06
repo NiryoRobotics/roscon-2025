@@ -144,7 +144,7 @@ We also initialize the `Pick and Place Executor`, which I modified to use MoveIt
 self.pick_place = PickAndPlaceExecutorMoveIt2(self, "arm")
 ```
 
-> 💡 Tip : The methods of the classes are empty, you will have to complete them to be able to reproduce the naive solution.
+> 💡 Tip : The methods of the classes are empty, you will have to complete them to be able to reproduce the intern solution.
 
 The subscription leads to the execution of the `_on_digital_state` method.
 
@@ -618,7 +618,7 @@ And I was absolutely right, the robot was able to pick and place the vials in th
 
 As we are working on industrial applications, I decided that it was better to have a productive path rather than a safe one. That's why I commented these lines in the final project.
 
-> 💡 Tip: For the naive solution, test both implementations, with and without the obstacle and report the results
+> 💡 Tip: For the intern solution, test both implementations, with and without the obstacle and report the results
 >Please comment the `self.pick_place.add_collision_object` in the initialization of the node to test without the collison object.
 
 ```bash

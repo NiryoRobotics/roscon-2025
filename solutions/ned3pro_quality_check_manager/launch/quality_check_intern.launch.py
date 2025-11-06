@@ -82,11 +82,11 @@ def generate_launch_description():
         description='Path to poses configuration file'
     )
     
-    # Quality check naive node
-    quality_check_naive_node = Node(
+    # Quality check intern node
+    quality_check_intern_node = Node(
         package='ned3pro_quality_check_manager',
-        executable='quality_check_node_naive.py',
-        name='quality_check_node_naive',
+        executable='quality_check_node_intern.py',
+        name='quality_check_node_intern',
         output='screen',
         parameters=[{
             'conveyor_id': LaunchConfiguration('conveyor_id'),
@@ -115,5 +115,5 @@ def generate_launch_description():
         max_torque_percentage_arg,
         hold_torque_percentage_arg,
         poses_path_arg,
-        quality_check_naive_node,
+        quality_check_intern_node,
     ])
