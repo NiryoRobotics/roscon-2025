@@ -16,7 +16,7 @@
   - [Your Mission](#your-mission)
   - [Meet the Interns](#meet-the-interns)
   - [Paul-Louis Chardonnay](#paul-louis-chardonnay)
-  - [Hans-Günther Biermann](#hans-günther-biermann)
+  - [Hansel Biermann](#Hansel-biermann)
 - [Next Steps](#next-steps)
   - [1. Divide Your Team](#1-divide-your-team)
   - [2. Read Your Assigned Internship Report](#2-read-your-assigned-internship-report)
@@ -318,7 +318,6 @@ At this point you will read the reports of the interns, the tone of the reports 
 
 ### Paul-Louis Chardonnay
 
-![Paul-Louis Chardonnay](assets/plchar.png)
 
 **Education:** Final year of Master's degree in Mechatronics Engineering at the University of Lille
 
@@ -334,9 +333,8 @@ At this point you will read the reports of the interns, the tone of the reports 
 
 ---
 
-### Hans-Günther Biermann
+### Hansel Biermann
 
-![Hans-Günther Biermann](assets/hansgunther.png)
 
 **Education:** Bachelor's degree in Computer Science at the University of Stuttgart
 
@@ -348,7 +346,7 @@ At this point you will read the reports of the interns, the tone of the reports 
 
 **Assignment:** Quality Check line integration, as he has strong background in computer vision.
 
-**Gameplay:** Hans-Günther implemented a solution that is over-engineered for the task, leading to an unefficient solution with a complex architecture. The feedback will be performed by a university professor that does not have engough time to provide a guided feedback leading to a perfect solution. This character is perfect for persons who want to learn how to design and lead a complex integration project, based on ROS2 and that uses principles of good Python programming, such as encapsulation, multi-threading... It also talks about AI integration in an industrial context.
+**Gameplay:** Hansel implemented a solution that is over-engineered for the task, leading to an unefficient solution with a complex architecture. The feedback will be performed by a university professor that does not have engough time to provide a guided feedback leading to a perfect solution. This character is perfect for persons who want to learn how to design and lead a complex integration project, based on ROS2 and that uses principles of good Python programming, such as encapsulation, multi-threading... It also talks about AI integration in an industrial context.
 
 ---
 
@@ -359,14 +357,14 @@ At this point you will read the reports of the interns, the tone of the reports 
 For the following parts of the workshop, **divide your team of 4 into two groups:**
 
 - **Group 1 (2 people):** Follow the work of **Paul-Louis** on the **Packaging Line**
-- **Group 2 (2 people):** Follow the work of **Hans-Günther** on the **Quality Check Line**
+- **Group 2 (2 people):** Follow the work of **Hansel** on the **Quality Check Line**
 
 ### 2. Read Your Assigned Internship Report
 
 Each intern wrote a detailed report explaining their solution. **Click on the links below to access the reports:**
 
 - 📦 **Packaging Line Team:** [Paul-Louis Chardonnay's Report](workshop/workshop_packaging_manager/pl_chardonnay_report.md)
-- 🔍 **Quality Check Line Team:** [Hans-Günther Biermann's Report](workshop/workshop_quality_check_manager/hg_biermann_report.md)
+- 🔍 **Quality Check Line Team:** [Hansel Biermann's Report](workshop/workshop_quality_check_manager/hg_biermann_report.md)
 
 ### 3. Follow the Instructions in the Reports
 

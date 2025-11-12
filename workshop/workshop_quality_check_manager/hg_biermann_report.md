@@ -1,4 +1,4 @@
-# Hans-Günther Biermann's Report
+# Hansel Biermann's Report
 
 ## Introduction
 During my internship in Basel, I was tasked with integrating a Niryo Ned3 Pro robot into a quality check line. The main goal was to sort chemical products in vials between safe and unsafe categories (classified according to their color) and place the safe ones in a packaging line, which will be created by a french fellow that worked with me on the global project.
@@ -34,7 +34,7 @@ Edit your `~/.bashrc` file (located at `~/.bashrc` locally or `/root/.bashrc` in
     
 ## My Solution
 
-> 💡 Hey ! I'm the narrator, I'll be guiding you sometimes to help you test the code. To begin with Hans-Gunter's solution let's open the `quality_check_node.py` file in the `/roscon-2025/workshop/workshop_quality_check_manager/scripts/quality_check_node.py` directory at the side of this document for the robot side and the `detection.py` file of the `workshop_rpi_manager` package for the raspberry side. The report is written by Hans-Günther as "I". Please read it and complete the missing methods when he explained how he did it. 
+> 💡 Hey ! I'm the narrator, I'll be guiding you sometimes to help you test the code. To begin with Hans-Gunter's solution let's open the `quality_check_node.py` file in the `/roscon-2025/workshop/workshop_quality_check_manager/scripts/quality_check_node.py` directory at the side of this document for the robot side and the `detection.py` file of the `workshop_rpi_manager` package for the raspberry side. The report is written by Hansel as "I". Please read it and complete the missing methods when he explained how he did it. 
 
 ### Robot side
 On the robot side we provide a ROS2 package that handles the robot's task, starting with a pick and place action when an object is detected by the IR sensor, from the conveyor belt to the testing zone. Once the safety state of the vial is received fom the raspberry, the robot will move to the packaging line to place the vial if it's safe, or to the reject zone if it's unsafe.
@@ -140,7 +140,7 @@ self.create_subscription(String, "/safety_state", self._on_safety_state, 10)
 We also introduce a QoS Profile to ensure that the messages from the IR sensor are never lost if a new object is detected. We chose the RELIABLE policy to prevent any loss of data and ensure maximum safety. We also keep the last 10 messages in memory to avoid any loss of data and use the last messages to be stored to be up to date at each time. Remember : always put safety first !
 
 
-> 💡 Tip: For now, you will note that the methods of your classes are empty. From the instructions given by Hans-Günther, complete the missing methods to be able to reproduce the intern solution.
+> 💡 Tip: For now, you will note that the methods of your classes are empty. From the instructions given by Hansel, complete the missing methods to be able to reproduce the intern solution.
 
 Both subscriptions lead to the executions of the respectives methods `_on_digital_state` and `_on_safety_state`.
 
@@ -365,7 +365,7 @@ When the second pick and place is performed, we return to the `grip` position to
 
 
 
-> 💡 Tip: For now, follow the instructions given by Hans-Günther to complete the missing run loop. Fill the poses.yaml file with the positions you took. You can create some methods on the pick and place executor to perform the two phases and make the code more readable. The correction for the intern solution is in the `/ned3pro_quality_check_manager/scripts/quality_check_node_intern.py` file.
+> 💡 Tip: For now, follow the instructions given by Hansel to complete the missing run loop. Fill the poses.yaml file with the positions you took. You can create some methods on the pick and place executor to perform the two phases and make the code more readable. The correction for the intern solution is in the `/ned3pro_quality_check_manager/scripts/quality_check_node_intern.py` file.
 
 ### Raspberry side
 
@@ -411,7 +411,7 @@ To perform the quality check, I created a script into the raspberry pi manager p
         self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 10)
 
 ```
->💡 Tip: Go to the Raspberry Pi and open the `rpi_manager/scripts/detection.py` to continue the workshop. Complete the solution as explained by Hans-Günther.
+>💡 Tip: Go to the Raspberry Pi and open the `rpi_manager/scripts/detection.py` to continue the workshop. Complete the solution as explained by Hansel.
 
 Then I asked myself, How can the quality check can be performed on the raspberry pi, and then be sent to the Robot's Node ? What a tricky question for my mind, but I found out and remembereed that we were using ROS2. Even if I do not know a lot about ROS2, i know that main part of the communication is done through topics. So I created a publisher to the `quality_check/safety_state` topic to publish the safety state, and attached a timer to publish the safety state. I wanted to have the best performances possible, so I measured the mean time for the robot to perform a trajectory and I find out it was approximatively 5 seconds. I thus set the timer to 5 seconds to ensure that the safety state is published at the right time, i.e when the robot performed its full trajectory. 
 
@@ -755,7 +755,7 @@ The HMI is supposed to display logs to the user, the demo version you downloaded
 
 ## Bonus
 
-Hey ! Pierre's talking, I just infiltrated Hans-Günther's report ! I just wanted you to know that the other part of your team read Paul-Louis's report and got completely different feedbacks ! One told me that they still don't have MultiThreading, meaning that their conveyor is not working as fine as yours... Would you mind checking if you can implement this feature in their code ? I think it would be a great improvement for the project !
+Hey ! Pierre's talking, I just infiltrated Hansel's report ! I just wanted you to know that the other part of your team read Paul-Louis's report and got completely different feedbacks ! One told me that they still don't have MultiThreading, meaning that their conveyor is not working as fine as yours... Would you mind checking if you can implement this feature in their code ? I think it would be a great improvement for the project !
 
 
 

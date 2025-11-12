@@ -1,7 +1,7 @@
 # Paul-Louis Chardonnay's Report
 
 ## Introduction
-Answering to all job application in Switzerland I saw on LinkedIn during 6 month, I finally encounted a company that was looking for a robot integrator. I applied and was accepted for an internship in Basel, Switzerland. This company sells chemical products to pharmacies all over the world, a stunning industry that I won't miss to add to my resume. During my internship I was asked to integrate a Niryo Ned3 Pro robot into a packaging line in order to pack the chemical products into boxes, finalzing the whole production process whose begining has been automated by my fellow intern Hans-Gunther. My internship is also a partnership with the Niryo company itself, as they will be in charge of sending the hardware and providing feedback to my implementation, before all I wanted to thanks them for this opportunity.
+Answering to all job application in Switzerland I saw on LinkedIn during 6 month, I finally encounted a company that was looking for a robot integrator. I applied and was accepted for an internship in Basel, Switzerland. This company sells chemical products to pharmacies all over the world, a stunning industry that I won't miss to add to my resume. During my internship I was asked to integrate a Niryo Ned3 Pro robot into a packaging line in order to pack the chemical products into boxes, finalzing the whole production process whose begining has been automated by my fellow intern Hansel. My internship is also a partnership with the Niryo company itself, as they will be in charge of sending the hardware and providing feedback to my implementation, before all I wanted to thanks them for this opportunity.
 
 The goal of the integration is simple : a vial is detected by an IR sensor on a conveyor belt, the robot is asked to pick it up and place it in a box in order to be packed and sent to the warehouse. 
 
@@ -202,8 +202,8 @@ rclpy.spin_until_future_complete(self._node, future)
 ```
 >💡 Tip : At this point you can also test your method by calling it from the main loop of the node, try to start and stop the conveyor belt and see if everything is working !
 
-### Hans-Günther's Pick and Place Executor
-Following the hans-gunther's instructions, I decided to use the same implementation as him, as I wanted to be consistent with his work while I knew i would have to rework this class. 
+### Hansel's Pick and Place Executor
+Following the Hansel's instructions, I decided to use the same implementation as her, as I wanted to be consistent with his work while I knew i would have to rework this class. 
 
 The pick and place executor is responsible for controlling the robot's task.
 
@@ -411,7 +411,7 @@ We then want to declare the launch arguments, following this pattern for the rvi
     )
 ```
 
-Note that we have to do it for each parameter we want to be able to change from the launch file, here `conveyor_id`, `speed` and `sensor_index`, in order to fit with Hans-Gunther's implementation.
+Note that we have to do it for each parameter we want to be able to change from the launch file, here `conveyor_id`, `speed` and `sensor_index`, in order to fit with Hansel's implementation.
 
 > 💡 Warning: Before continuing please be sure you implemented all the required launch arguments
 
@@ -597,7 +597,7 @@ def run_loop(self):
 
 ### Results 
 
-The main result of this implementation is that the robot was indeed able to pick and place the vials in the box, and the movements of the robot using MoveIt2 were very smooth and fast, in comparison of Hans-Gunther's implementation. That was the main victory for me, I will be able to show better movements to my future employers ! 
+The main result of this implementation is that the robot was indeed able to pick and place the vials in the box, and the movements of the robot using MoveIt2 were very smooth and fast, in comparison of Hansel's implementation. That was the main victory for me, I will be able to show better movements to my future employers ! 
 
 But, there's one thing, for a unknown reason, the trajectories are not consistent and sometimes the path chosen results in a collision with the box, leading to some unsafe throwing of vials. 
 
@@ -636,7 +636,7 @@ Don't forget that your ros2driver needs to be running while the program is launc
 
 ## Conclusion 
 
-This internship was a great experience, I learnt a lot and I had the opportunity to work with a great team. I want to thank my fellow intern Hans-Gunther for his help and his guidance, and Niryo for this opportunity. 
+This internship was a great experience, I learnt a lot and I had the opportunity to work with a great team. I want to thank my fellow intern Hansel for his help and his guidance, and Niryo for this opportunity. 
 
 At the end we have a fully functional packaging line able to pick the vials from the conveyor and place them in the box. 
 
@@ -743,7 +743,7 @@ The second approach is to use hardware to incline the box, allowing the vials to
 
 ## Bonus
 
-Hey Pierre's talking, I just infiltrated Paul-Louis's report ! I just wanted you to know that the other part of your team read Hans-Gunther's report and got completely different feedbacks ! One told me that they still use Niryo's classic python API, meaning that the robot is not working at full speed ! Would you mind checking if you can implement this feature in their code ? I think it would be a great improvement for the project !
+Hey Pierre's talking, I just infiltrated Paul-Louis's report ! I just wanted you to know that the other part of your team read Hansel's report and got completely different feedbacks ! One told me that they still use Niryo's classic python API, meaning that the robot is not working at full speed ! Would you mind checking if you can implement this feature in their code ? I think it would be a great improvement for the project !
 
 Now you can ignore the collision object, as deterministic planners are not able to avoid collisions. But this time record a slightly higher drop position, using PTP or LIN as a pipeline you should now have a stable pick and place sequence. 
 
