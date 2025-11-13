@@ -1,17 +1,58 @@
 {
-    "name": "ROS2 Jazzy Niryo",
-    "image": "ros2-jazzy-roscon-niryo-full",
+    "name": "ROS2 Jazzy Niryo Workshop",
+    
+    // Use pre-built image from registry (recommended for workshop participants)
+    "image": "ghcr.io/niryorobotics/roscon-2025-workshop:latest",
+    
+    // Alternative: Build locally from Dockerfile (uncomment to use local build)
+    // "build": {
+    //     "dockerfile": "Dockerfile",
+    //     "context": "..",
+    //     "args": {
+    //         "WORKSPACE_NAME": "niryo_workshop"
+    //     }
+    // },
+
+    "workspaceFolder": "/root/niryo_workshop",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/root/niryo_workshop/src/roscon-2025,type=bind",
+
     "runArgs": [
       "--net=host",
       "-e", "DISPLAY=${localEnv:DISPLAY}",
       "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
       "--device", "/dev/dri"
     ],
-    "extensions": [
-      "ms-python.python",
-      "ms-iot.vscode-ros",
-      "ms-python.vscode-pylance"
-    ],
-    "remoteUser": "root"
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ranch-hand-robotics.rde-ros-2",
+                "ranch-hand-robotics.urdf-editor",
+                "ranch-hand-robotics.rde-pack",
+                "ms-python.vscode-pylance",
+                "ms-python.black-formatter",
+                "ms-python.isort",
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "shd101wyy.markdown-preview-enhanced",
+                "twxs.cmake"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/root/niryo_workshop/venv/bin/python",
+                "python.terminal.activateEnvironment": true,
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "terminal.integrated.cwd": "/root/niryo_workshop"
+            }
+        }
+    },
+    "remoteUser": "root",
+    "postCreateCommand": "echo 'Welcome to the Niryo ROS2 Workshop! Your environment is ready.' && cd /root/niryo_workshop && (source install/setup.bash 2>/dev/null || echo 'Run build-workspace to build the ROS packages')",
+        
+    "forwardPorts": [9090],
+    "portsAttributes": {
+        "9090": {
+            "label": "ROS Bridge",
+            "onAutoForward": "notify"
+        }
+    }
   }
-  
