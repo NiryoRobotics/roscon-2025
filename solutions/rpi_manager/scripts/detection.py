@@ -40,6 +40,14 @@ class DetectionNode(Node):
             self.get_logger().info("Camera initialised successfully")
         
         self._srv = self.create_service(GetSafety, 'get_safety', self._on_get_safety)
+
+        try:
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self.get_logger().info(
+                f"Camera buffer size set: {self.cap.get(cv2.CAP_PROP_BUFFERSIZE)}"
+            )
+        except Exception as e:
+            self.get_logger().warn(f"Could not set camera buffer size: {e}")
         
         # Create image publisher
         self.image_publisher = self.create_publisher(Image, '/rpi_manager/frame', 1)

@@ -369,7 +369,7 @@ When the second pick and place is performed, we return to the `grip` position to
 
 ### Raspberry side
 
-The client had some requirements about performances. That's why they asked us to create an interactive interface that can display the internal state of the whole system. As I wanted my client to have the best experience possible, that is to say : a performative, free to use and lightweight, python based HCI. Hence, I obviously typed into google, "Best HCI python 2025 free download no virus no toolbars" and found this gem : 
+The client had some requirements about performances. That's why they asked us to create an interactive interface that can display the internal state of the whole system. As I wanted my client to have the best experience possible, that is to say : a performative, free to use and lightweight, HMI. Hence, I obviously typed into google, "Best HMI 2025 free download no virus no toolbars" and found this gem : 
 
 `hmi_standard.py`
 
@@ -407,6 +407,14 @@ To perform the quality check, I created a script into the raspberry pi manager p
             self.cap = None
         else:
             self.get_logger().info("Camera initialised successfully")
+
+        try:
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self.get_logger().info(
+                f"Camera buffer size set: {self.cap.get(cv2.CAP_PROP_BUFFERSIZE)}"
+            )
+        except Exception as e:
+            self.get_logger().warn(f"Could not set camera buffer size: {e}")
         
         self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 10)
 

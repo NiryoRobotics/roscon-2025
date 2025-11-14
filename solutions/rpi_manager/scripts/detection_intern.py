@@ -38,6 +38,14 @@ class DetectioninternNode(Node):
             self.cap = None
         else:
             self.get_logger().info("Camera initialised successfully")
+
+        try:
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            self.get_logger().info(
+                f"Camera buffer size set: {self.cap.get(cv2.CAP_PROP_BUFFERSIZE)}"
+            )
+        except Exception as e:
+            self.get_logger().warn(f"Could not set camera buffer size: {e}")
         
         # Create publisher for topic
         self.publisher_ = self.create_publisher(String, '/quality_check/safety_state', 1)
