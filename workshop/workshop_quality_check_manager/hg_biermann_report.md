@@ -429,6 +429,8 @@ Then I asked myself, How can the quality check can be performed on the raspberry
 Inside the timer callback, the logic should be simple. We can use the camera to take an image via `opencv-python` (or `cv2`). **You might have to install it on the rapsberry pi if this has not been done already.** 
 
 ```python
+    # Empty opencv buffer
+    _ = self.cap.grab()
     ret, frame = self.cap.read()
 ```
 `ret` is a boolean value that is `True` if the image is successfully captured, `False` otherwise. `frame` is the image captured by the camera.

@@ -19,7 +19,7 @@ class DetectioninternNode(Node):
         self.bridge = CvBridge()
         
         # Load YOLO v8 model
-        model_path = "/workspaces/roscon-2025/src/assets/safety_check_model.pt"
+        model_path = "/home/niryo/workspaces/roscon-2025/src/assets/safety_check_model.pt"
         if not os.path.exists(model_path):
             self.get_logger().error(f"Model not found: {model_path}")
             self.model = None
@@ -120,6 +120,8 @@ class DetectioninternNode(Node):
             return
         
         try:
+            # Empty opencv buffer
+            _ = self.cap.grab()
             # Capture an image
             ret, frame = self.cap.read()
             if not ret:
